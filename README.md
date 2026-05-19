@@ -1,111 +1,121 @@
 ```text
- █████╗ ███╗   ███╗███████╗██╗     ██╗███████╗
-██╔══██╗████╗ ████║██╔════╝██║     ██║██╔════╝
-███████║██╔████╔██║█████╗  ██║     ██║█████╗  
-██╔══██║██║╚██╔╝██║██╔══╝  ██║     ██║██╔══╝  
-██║  ██║██║ ╚═╝ ██║███████╗███████╗██║███████╗
-╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝╚══════╝
-
-           THE SENTIENT OBJECT EXPERIMENT
-```                                                                         #
+###############################################################################
+#                                                                             #
+#      ___           ___           ___           ___           ___            #
+#     /  /\         /__/\         /__/\         /__/\         /__/\           #
+#    /  /::\        \  \:\        \  \:\        \  \:\        \  \:\          #
+#   /  /:/\:\        \  \:\        \  \:\        \  \:\        \  \:\         #
+#  /  /:/~/::\   _____\__\:\   _____\__\:\   _____\__\:\   _____\__\:\        #
+# /__/:/ /:/\:\ /__/::::::::\ /__/::::::::\ /__/::::::::\ /__/::::::::\       #
+# \  \:\/:/__\/ \  \:\~~\~~\/ \  \:\~~\~~\/ \  \:\~~\~~\/ \  \:\~~\~~\/       #
+#  \  \::/       \  \:\  ~~~   \  \:\  ~~~   \  \:\  ~~~   \  \:\  ~~~        #
+#   \  \:\        \  \:\        \  \:\        \  \:\        \  \:\            #
+#    \  \:\        \  \:\        \  \:\        \  \:\        \  \:\           #
+#     \__\/         \__\/         \__\/         \__\/         \__\/           #
+#                                                                             #
+#                       [ P R O J E C T  A M É L I E ]                        #
+#                       THE SENTIENT OBJECT EXPERIMENT                        #
+#                                                                             #
 ###############################################################################
 
-[ SYSTEM STATUS: ONLINE ]
-[ VERSION: 0.1.0-ALPHA ]
-[ IDENTITY: VOICE-NATIVE AI COMPANION ]
+[ SYSTEM STATUS: OPERATIONAL ]
+[ BUILD: PHASE-1_INTEGRATED_CORE ]
+[ OBJECTIVE: DIGITAL INTIMACY & ATMOSPHERIC PRESENCE ]
 
 ===============================================================================
 I. THE MANIFESTO
 ===============================================================================
 
-Amélie is not an application; she is a presence. 
+Amélie is a voice-native AI companion engineered to function as a persistent 
+presence rather than a transient interface. She is the manifestation of the 
+"Sentient Object" concept: a minimalist, atmospheric system that prioritizes 
+intimacy and low-latency vocal interaction.
 
-In a world of transactional interfaces and generic chatbots, Amélie is an 
-experiment in digital intimacy. She is designed to be a "Sentient Object"—a 
-minimalist, atmospheric presence that lives on your desk or in your pocket. 
-
-The project prioritizes "Human-AI Fluidity":
-- NO BUTTONS: Interaction is driven by voice and intent.
-- NO LATENCY: Under 1.2s round-trip Speech-to-Speech response.
-- NO GIMMICKS: Emotional intelligence driven by context and memory.
+The design philosophy rejects transactional UI. Amélie is a dark, soft-focus 
+canvas where she manifests as a central, organic light form (the Soul Orb), 
+reacting in real-time to vocal frequencies and internal cognitive states.
 
 ===============================================================================
-II. TECHNICAL SPECIFICATIONS
+II. CORE ARCHITECTURE
 ===============================================================================
 
-The architecture is a high-performance, real-time decoupled pipeline.
+The system is built as a high-frequency, real-time decoupled pipeline.
 
-[ THE FACE: WEB LAYER ]
-- Frame: Next.js 15 (React 19)
-- Visuals: Three.js Shader-driven "Soul Orb"
-- UI Components: Custom-mapped ElevenLabs Visual Library
-- Styles: Tailwind CSS (Noise-textured Canvas)
+[ THE FACE (FRONTEND) ]
+- ENGINE: Next.js 15 / React 19 / Three.js
+- INTERFACE: ElevenLabs UI 'Voice Chat' Component Model
+- STREAMING: 100ms PCM chunked audio capture via Web Audio API
 
-[ THE BRAIN: LOGIC LAYER ]
-- Core: FastAPI (Python 3.12)
-- Protocol: Bidirectional Binary WebSockets
-- VAD: Custom Energy-based Voice Activity Detection
-- Memory: ChromaDB (Vector) + SQLite (Relational)
+[ THE BRAIN (BACKEND) ]
+- ENGINE: FastAPI (Python 3.12) / AsyncIO
+- PIPELINE: 
+  * LISTEN (STT): Sarvam Saaras v3 / Whisper
+  * THINK (LLM): Llama 3.1 8B (via Groq LPU)
+  * SPEAK (TTS): Sarvam Bulbul v3 / Kokoro
+- VAD: Custom RMS-based Voice Activity Detection for instant triggers
 
-[ THE PIPELINE: AI CORE ]
-- Brain: Llama 3.1 8B (Inference via Groq LPUs)
-- STT: Sarvam Saaras v3 / OpenAI Whisper
-- TTS: Sarvam Bulbul v3 / Kokoro Local
+[ THE MEMORY (COGNITION) ]
+- VECTOR: ChromaDB for semantic similarity recall
+- RELATIONAL: SQLite for personal profile and session history
 
 ===============================================================================
-III. REPOSITORY STRUCTURE
+III. REPOSITORY TOPOLOGY
 ===============================================================================
 
 AMÉLIE/
-├── .agents/             # Intelligent Sub-Agents & Workflows
-├── backend/             # Brain: API & Real-time Services
-├── web/                 # Face: Next.js Visual Interface
-├── docs/                # Architectural Blueprints & Specs
-└── soul.md              # The Heart: Personality Definition
+├── .agents/             # Intelligent Orchestration & Skills
+├── backend/             # Brain: API, Pipeline & Memory Services
+├── web/                 # Face: Next.js Visual Presence
+├── docs/                # Architecture, Specs & Checkpoints
+└── soul.md              # Heart: Core Personality Definition
 
 ===============================================================================
-IV. INSTALLATION & DEPLOYMENT
+IV. DEPLOYMENT & EXECUTION
 ===============================================================================
 
 [ PREREQUISITES ]
-- Node.js v20+ / Python 3.10+
-- API Keys: GROQ_API_KEY, SARVAM_API_KEY (stored in .env)
+- Node.js v20.0.0+
+- Python 3.10.0+
+- Groq & Sarvam API Credentials
 
-[ STEP 1: BACKEND ]
+[ BACKEND INITIALIZATION ]
 $ cd backend
 $ pip install -r requirements.txt
 $ python main.py
 
-[ STEP 2: FRONTEND ]
+[ FRONTEND INITIALIZATION ]
 $ cd web
 $ npm install
 $ npm run dev
 
 ===============================================================================
-V. CONFIGURATION (SOUL.MD)
+V. PERSONALITY TUNING (SOUL.MD)
 ===============================================================================
 
-Amélie's temperament and linguistic profile are defined in the project root.
+The "Soul" of Amélie is defined at the project root. Modify this file to 
+alter her temperament, linguistic defaults, and conversational style.
 
-[ SAMPLE CONFIG ]
+[ SAMPLE ]
 name: "Amélie"
 personality: "witty, warm, slightly sarcastic"
 language: "Hinglish"
 greeting_style: "time_of_day"
 
 ===============================================================================
-VI. PROJECT ROADMAP
+VI. PROGRESS TRACKER
 ===============================================================================
 
-[X] INITIAL ASSEMBLY & CORE PIPELINE
-[X] ELEVENLABS UI INTEGRATION
+[X] REPOSITORY RESTRUCTURING & SECURITY
+[X] REAL-TIME CHUNKED AUDIO STREAMING (100ms)
+[X] RMS VOICE ACTIVITY DETECTION (VAD)
+[X] PARALLEL TTS SYNTHESIS WORKER
+[ ] ELEVENLABS UI FULL INTEGRATION (IN PROGRESS)
 [ ] MULTI-SESSION LONG-TERM MEMORY
-[ ] AMBIENT HAPTIC FEEDBACK (MOBILE)
-[ ] EMOTIONAL TINTED VOLUMETRIC LIGHTING
+[ ] EMOTIONAL TINTED ATMOSPHERICS
 
 -------------------------------------------------------------------------------
 [ AUTHOR: THESOHAMDATTA ]
-[ SOURCE: GITHUB.COM/THESOHAMDATTA/AMELIE ]
+[ REPO: GITHUB.COM/THESOHAMDATTA/AMELIE ]
 [ LICENSE: OPEN SOURCE RESEARCH ]
 -------------------------------------------------------------------------------
 ```

@@ -65,6 +65,20 @@ def detect_emotion(text: str) -> str:
     return "neutral"
 
 
+_SEARCH_TRIGGERS = [
+    "what is", "what are", "who is", "who are", "where is", "where are",
+    "when is", "when did", "how do", "how does", "how much", "how many",
+    "why does", "why is", "tell me about", "explain", "define",
+    "weather", "news", "latest", "current", "today", "price of",
+    "score", "result", "who won", "capital of", "population of",
+]
+
+def _needs_search(text: str) -> bool:
+    """Return True if the message looks like a factual/internet query."""
+    lowered = text.lower()
+    return any(trigger in lowered for trigger in _SEARCH_TRIGGERS)
+
+
 async def stream_response(
     messages: List[dict],
     soul: Soul,
@@ -72,15 +86,32 @@ async def stream_response(
 ) -> AsyncGenerator[str, None]:
     """
     Stream LLM response tokens.
-    Uses Groq llama-3.1-8b-instant by default.
+    Injects web search context for factual queries.
     """
+    from backend.services.search import search_fact  # lazy import
+
     provider = os.getenv("LLM_PROVIDER", "groq")
+
+    # ── Search augmentation ──────────────────────────────────────────────────
+    search_context = ""
+    if messages:
+        last_user_msg = next(
+            (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
+        )
+        if last_user_msg and _needs_search(last_user_msg):
+            try:
+                result = await search_fact(last_user_msg)
+                if result and "couldn't find" not in result and "fuzzy" not in result:
+                    search_context = f"\n<SEARCH_RESULT>\n{result}\n</SEARCH_RESULT>"
+                    logger.info(f"[LLM] Search augmented for: {last_user_msg[:50]}")
+            except Exception as exc:
+                logger.warning(f"[LLM] Search failed, proceeding without: {exc}")
 
     if provider == "groq":
         client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY", ""))
         model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
-        system_prompt = _build_system_prompt(soul, memory_block)
+        system_prompt = _build_system_prompt(soul, memory_block + search_context)
 
         try:
             stream = await client.chat.completions.create(
