@@ -1,83 +1,119 @@
-# Amélie
-
-> A voice-native AI companion designed to feel like a sentient object, not just an interface.
-
-Amélie is a high-fidelity, real-time AI companion that prioritizes voice-first interaction and atmospheric presence. Built with a focus on low-latency response and emotional intelligence, she uses a "Soul Orb" visualizer to communicate state and mood.
-
-![Amélie Preview](https://raw.githubusercontent.com/thesohamdatta/Amelie/master/web/public/window.svg) <!-- Placeholder for actual logo/preview -->
-
-## 🚀 Key Features
-
-- **Voice-Native Core:** Natural back-and-forth conversation with under 1.2s end-to-end latency.
-- **Atmospheric UI:** Minimalist Next.js frontend featuring the reactive "Soul Orb" using ElevenLabs UI components.
-- **Multilingual Soul:** Seamlessly switch between English, Hinglish, and Hindi (powered by Sarvam AI).
-- **Persistent Memory:** Long-term context awareness powered by ChromaDB and SQLite.
-- **Real-time Pipeline:** Bidirectional WebSocket streaming for audio, text, and emotional states.
-
-## 🛠️ Tech Stack
-
-- **Frontend:** Next.js 15, Tailwind CSS, Framer Motion, ElevenLabs UI Components.
-- **Backend:** FastAPI (Python), AsyncIO, WebSockets.
-- **AI Models:** 
-  - **Brain:** Llama 3.1 8B (via Groq for speed).
-  - **Voice (Hinglish/Hindi):** Sarvam Saaras (STT) & Bulbul (TTS).
-  - **Voice (English):** Whisper (STT) & Kokoro (TTS).
-- **Infrastructure:** Docker Compose, Redis, Celery.
-
-## 📦 Project Structure
-
 ```text
-Amélie/
-├── .agents/             # Agent Intelligence Layer & Workflows
-├── backend/             # Brain: FastAPI & AI Pipelines
-├── web/                 # Face: Next.js Frontend
-├── docs/                # Knowledge Base & Design Specs
-└── soul.md              # Heart: Personality Configuration
-```
+###############################################################################
+#                                                                             #
+#      ___           ___           ___           ___           ___            #
+#     /  /\         /__/\         /__/\         /__/\         /__/\           #
+#    /  /::\        \  \:\        \  \:\        \  \:\        \  \:\          #
+#   /  /:/\:\        \  \:\        \  \:\        \  \:\        \  \:\         #
+#  /  /:/~/::\   _____\__\:\   _____\__\:\   _____\__\:\   _____\__\:\        #
+# /__/:/ /:/\:\ /__/::::::::\ /__/::::::::\ /__/::::::::\ /__/::::::::\       #
+# \  \:\/:/__\/ \  \:\~~\~~\/ \  \:\~~\~~\/ \  \:\~~\~~\/ \  \:\~~\~~\/       #
+#  \  \::/       \  \:\  ~~~   \  \:\  ~~~   \  \:\  ~~~   \  \:\  ~~~        #
+#   \  \:\        \  \:\        \  \:\        \  \:\        \  \:\            #
+#    \  \:\        \  \:\        \  \:\        \  \:\        \  \:\           #
+#     \__\/         \__\/         \__\/         \__\/         \__\/           #
+#                                                                             #
+#                       [ P R O J E C T  A M É L I E ]                        #
+#                       THE SENTIENT OBJECT EXPERIMENT                        #
+#                                                                             #
+###############################################################################
 
-## 🚥 Getting Started
+[ SYSTEM STATUS: ONLINE ]
+[ VERSION: 0.1.0-ALPHA ]
+[ IDENTITY: VOICE-NATIVE AI COMPANION ]
 
-### Prerequisites
+===============================================================================
+I. THE MANIFESTO
+===============================================================================
 
-- Node.js 20+
-- Python 3.10+
-- Docker & Docker Desktop (recommended)
-- API Keys: Groq, Sarvam AI.
+Amélie is not an application; she is a presence. 
 
-### Local Setup
+In a world of transactional interfaces and generic chatbots, Amélie is an 
+experiment in digital intimacy. She is designed to be a "Sentient Object"—a 
+minimalist, atmospheric presence that lives on your desk or in your pocket. 
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/thesohamdatta/Amelie.git
-   cd Amelie
-   ```
+The project prioritizes "Human-AI Fluidity":
+- NO BUTTONS: Interaction is driven by voice and intent.
+- NO LATENCY: Under 1.2s round-trip Speech-to-Speech response.
+- NO GIMMICKS: Emotional intelligence driven by context and memory.
 
-2. **Backend Setup:**
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   # Configure your .env file
-   python main.py
-   ```
+===============================================================================
+II. TECHNICAL SPECIFICATIONS
+===============================================================================
 
-3. **Frontend Setup:**
-   ```bash
-   cd web
-   npm install
-   npm run dev
-   ```
+The architecture is a high-performance, real-time decoupled pipeline.
 
-## 🧠 The "Soul" Configuration
+[ THE FACE: WEB LAYER ]
+- Frame: Next.js 15 (React 19)
+- Visuals: Three.js Shader-driven "Soul Orb"
+- UI Components: Custom-mapped ElevenLabs Visual Library
+- Styles: Tailwind CSS (Noise-textured Canvas)
 
-You can customize Amélie's personality by editing `soul.md` at the project root. Changes take effect on the next session start.
+[ THE BRAIN: LOGIC LAYER ]
+- Core: FastAPI (Python 3.12)
+- Protocol: Bidirectional Binary WebSockets
+- VAD: Custom Energy-based Voice Activity Detection
+- Memory: ChromaDB (Vector) + SQLite (Relational)
 
-```yaml
+[ THE PIPELINE: AI CORE ]
+- Brain: Llama 3.1 8B (Inference via Groq LPUs)
+- STT: Sarvam Saaras v3 / OpenAI Whisper
+- TTS: Sarvam Bulbul v3 / Kokoro Local
+
+===============================================================================
+III. REPOSITORY STRUCTURE
+===============================================================================
+
+AMÉLIE/
+├── .agents/             # Intelligent Sub-Agents & Workflows
+├── backend/             # Brain: API & Real-time Services
+├── web/                 # Face: Next.js Visual Interface
+├── docs/                # Architectural Blueprints & Specs
+└── soul.md              # The Heart: Personality Definition
+
+===============================================================================
+IV. INSTALLATION & DEPLOYMENT
+===============================================================================
+
+[ PREREQUISITES ]
+- Node.js v20+ / Python 3.10+
+- API Keys: GROQ_API_KEY, SARVAM_API_KEY (stored in .env)
+
+[ STEP 1: BACKEND ]
+$ cd backend
+$ pip install -r requirements.txt
+$ python main.py
+
+[ STEP 2: FRONTEND ]
+$ cd web
+$ npm install
+$ npm run dev
+
+===============================================================================
+V. CONFIGURATION (SOUL.MD)
+===============================================================================
+
+Amélie's temperament and linguistic profile are defined in the project root.
+
+[ SAMPLE CONFIG ]
 name: "Amélie"
 personality: "witty, warm, slightly sarcastic"
 language: "Hinglish"
-tts_voice: "sarvam_bulbul"
+greeting_style: "time_of_day"
+
+===============================================================================
+VI. PROJECT ROADMAP
+===============================================================================
+
+[X] INITIAL ASSEMBLY & CORE PIPELINE
+[X] ELEVENLABS UI INTEGRATION
+[ ] MULTI-SESSION LONG-TERM MEMORY
+[ ] AMBIENT HAPTIC FEEDBACK (MOBILE)
+[ ] EMOTIONAL TINTED VOLUMETRIC LIGHTING
+
+-------------------------------------------------------------------------------
+[ AUTHOR: THESOHAMDATTA ]
+[ SOURCE: GITHUB.COM/THESOHAMDATTA/AMELIE ]
+[ LICENSE: OPEN SOURCE RESEARCH ]
+-------------------------------------------------------------------------------
 ```
-
----
-
-Built with ❤️ by [THESOHAMDATTA](https://github.com/thesohamdatta)
