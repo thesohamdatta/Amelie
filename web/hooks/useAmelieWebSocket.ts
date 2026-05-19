@@ -35,8 +35,12 @@ export function useAmelieWebSocket(url: string) {
     const ws = new WebSocket(url)
     wsRef.current = ws
 
+    // Track the current message ID to prevent duplication from multiple calls or re-renders
+    let currentAssistantMessageIndex = -1;
+
     ws.onopen = () => {
       setAgentState("connected")
+      // ... same audio context init
       
       // Initialize Audio Context for playing TTS
       if (!audioContextRef.current) {
