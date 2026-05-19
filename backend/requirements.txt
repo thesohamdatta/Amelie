@@ -1,0 +1,14 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-dotenv==1.0.1
+pyyaml==6.0.2
+sarvamai==0.1.28
+groq==0.11.0
+python-multipart==0.0.12
+websockets==13.1
+pydub==0.25.1
+aiofiles==24.1.0
+chromadb==0.5.15
+redis==5.1.1
+celery==5.4.0
+sentence-transformers==3.1.1
