@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="web/public/amelie-face.png" width="180" style="border-radius: 48% 52% 50% 50% / 45% 45% 55% 55%; aspect-ratio: 0.8;" alt="Amélie Face">
+  <img src="web/public/hero.png" width="180" style="border-radius: 48% 52% 50% 50% / 45% 45% 55% 55%; aspect-ratio: 0.8;" alt="Amélie Face">V
   <br/>
   <br/>
   <h1>[ AMÉLIE ]</h1>
@@ -29,6 +29,12 @@ How she thinks, in a nutshell:
 
 ---
 
+### [ PREREQUISITES ]
+
+- **System:** `ffmpeg` (Required for audio processing. Install via `brew install ffmpeg` or `choco install ffmpeg`).
+- **Keys:** Groq API Key & Sarvam AI API Key.
+- **Setup:** Create a `.env` file in the root (see template below) and add your keys.
+
 ### [ GETTING STARTED ]
 
 **The Brain (Backend)**
@@ -43,5 +49,8 @@ cd web && npm install && npm run dev
 
 ---
 
-[ **STATUS:** PHASE-1_LIVE_LOOP ] 
-[ **MADE BY:** thesohamdatta ]
+<div align="center">
+  <img src="web/public/amelie-hero.png" width="200" style="border-radius: 50%;" alt="Amélie Silhouette">
+  <p><i>"She's witty, she's warm, and she's slightly sarcastic. Handle with care."</i></p>
+</div>
+
