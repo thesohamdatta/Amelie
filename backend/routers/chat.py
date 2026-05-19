@@ -179,6 +179,11 @@ async def _handle_text(ws: WebSocket, text: str, session_id: str, soul) -> None:
         sentence_buf += token
         await _send(ws, {"type": "text_chunk", "data": token})
 
+        # Detect emotion on first sentence boundary (mirrors _handle_audio)
+        if not emotion and sentence_buf and sentence_buf[-1] in _SENTENCE_END:
+            emotion = llm_service.detect_emotion(sentence_buf)
+            await _send(ws, {"type": "status", "state": "speaking", "emotion": emotion})
+
         if sentence_buf and sentence_buf[-1] in _SENTENCE_END and len(sentence_buf) > 8:
             await sentence_queue.put(sentence_buf.strip())
             sentence_buf = ""
@@ -234,11 +239,20 @@ async def websocket_chat(websocket: WebSocket) -> None:
 
     except WebSocketDisconnect:
         logger.info(f"[WS] Session {session_id} disconnected")
+        # Persist session summary before cleanup
+        history = mem_service.get_history(session_id)
+        if history:
+            transcript = " ".join(m["content"] for m in history)
+            mem_service.summarise_and_persist(session_id, transcript)
         mem_service.clear_session(session_id)
         if session_id in _session_buffers:
             del _session_buffers[session_id]
     except Exception as exc:
         logger.error(f"[WS] Session {session_id} error: {exc}")
+        history = mem_service.get_history(session_id)
+        if history:
+            transcript = " ".join(m["content"] for m in history)
+            mem_service.summarise_and_persist(session_id, transcript)
         mem_service.clear_session(session_id)
         if session_id in _session_buffers:
             del _session_buffers[session_id]

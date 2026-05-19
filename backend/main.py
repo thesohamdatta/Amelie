@@ -12,14 +12,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from celery import Celery
-
-# Celery for background memory tasks
-celery_app = Celery(
-    "amelie",
-    broker=f"redis://{os.getenv('REDIS_HOST', 'localhost')}:6379/0",
-    backend=f"redis://{os.getenv('REDIS_HOST', 'localhost')}:6379/0"
-)
+# Celery for background memory tasks (optional — requires Redis)
+# Only initialised if CELERY_ENABLED=true in .env
+import os as _os
+if _os.getenv("CELERY_ENABLED", "false").lower() == "true":
+    from celery import Celery
+    celery_app = Celery(
+        "amelie",
+        broker=f"redis://{_os.getenv('REDIS_HOST', 'localhost')}:6379/0",
+        backend=f"redis://{_os.getenv('REDIS_HOST', 'localhost')}:6379/0"
+    )
+else:
+    celery_app = None  # type: ignore
+    logger_pre = __import__("logging").getLogger(__name__)
+    # Logged after basicConfig below
 
 from backend.routers.chat import router as chat_router
 

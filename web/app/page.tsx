@@ -79,7 +79,7 @@ export default function AmelieHome() {
         setErrorMessage("Please enable microphone permissions in your browser.")
       }
     }
-  }, [sendAudio])
+  }, [sendAudioChunk])
 
   const handleCall = useCallback(() => {
     if (agentState === "disconnected") {

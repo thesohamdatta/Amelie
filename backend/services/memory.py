@@ -68,8 +68,14 @@ def add_message(session_id: str, role: str, content: str) -> None:
             logger.error(f"[Memory] Chroma error: {e}")
 
 def clear_session(session_id: str) -> None:
-    """Clear Redis history for a session."""
-    r.delete(f"history:{session_id}")
+    """Clear Redis history for a session (Redis or fallback)."""
+    if r:
+        try:
+            r.delete(f"history:{session_id}")
+        except Exception as e:
+            logger.error(f"[Memory] Redis delete error: {e}")
+    else:
+        _fallback_history.pop(session_id, None)
 
 def build_memory_block(session_id: str, query: str = "") -> str:
     """
