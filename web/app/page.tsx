@@ -20,7 +20,7 @@ import { Message, MessageContent } from "@/components/ui/message"
 import { Response } from "@/components/ui/response"
 
 export default function AmelieHome() {
-  const { agentState, connect, disconnect, sendAudio, sendText, messages, getOutputVolume } = useAmelieWebSocket("ws://localhost:8000/ws/chat")
+  const { agentState, connect, disconnect, sendAudio, sendAudioChunk, sendText, messages, getOutputVolume } = useAmelieWebSocket("ws://localhost:8000/ws/chat")
   
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isTextMode, setIsTextMode] = useState(false)
@@ -57,22 +57,21 @@ export default function AmelieHome() {
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
       
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
+          const reader = new FileReader()
+          reader.readAsDataURL(event.data)
+          reader.onloadend = () => {
+            const base64data = (reader.result as string).split(',')[1]
+            sendAudioChunk(base64data)
+          }
         }
       }
 
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
+      mediaRecorder.start(100)
+
+      mediaRecorder.onstop = () => {
         audioChunksRef.current = []
-        
-        const reader = new FileReader()
-        reader.readAsDataURL(audioBlob)
-        reader.onloadend = () => {
-          const base64data = (reader.result as string).split(',')[1]
-          sendAudio(base64data)
-        }
       }
     } catch (error) {
       console.error("Error starting mic:", error)

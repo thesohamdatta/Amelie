@@ -53,6 +53,18 @@ def _build_system_prompt(soul: Soul, memory_block: str = "") -> str:
     )
 
 
+def detect_emotion(text: str) -> str:
+    """Simple keyword-based emotion detection."""
+    text = text.lower()
+    if any(w in text for w in ["haha", "lol", "awesome", "great", "yay", "happy"]):
+        return "joy"
+    if any(w in text for w in ["sorry", "sad", "upset", "miss", "bad"]):
+        return "thoughtful"
+    if "?" in text or any(w in text for w in ["curious", "why", "how", "what"]):
+        return "curious"
+    return "neutral"
+
+
 async def stream_response(
     messages: List[dict],
     soul: Soul,

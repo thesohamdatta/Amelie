@@ -139,6 +139,12 @@ export function useAmelieWebSocket(url: string) {
     }
   }, [])
 
+  const sendAudioChunk = useCallback((base64Audio: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "audio_chunk", data: base64Audio }))
+    }
+  }, [])
+
   const sendText = useCallback((text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       setMessages(prev => [...prev, { role: "user", content: text }])
@@ -167,6 +173,7 @@ export function useAmelieWebSocket(url: string) {
     connect,
     disconnect,
     sendAudio,
+    sendAudioChunk,
     sendText,
     transcript,
     messages,
