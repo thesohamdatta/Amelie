@@ -1,137 +1,31 @@
-"use client"
+import { useState, useEffect, useRef, useCallback } from "react"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-
-export type AgentState =
-  | "disconnected"
-  | "connecting"
-  | "connected"
-  | "thinking"
-  | "speaking"
-  | "listening"
-  | "idle"
-
-export interface ChatMessage {
+export type ChatMessage = {
   role: "user" | "assistant"
-  content: string
+  content: str
 }
 
-export function useAmelieWebSocket(url: string) {
+export type AgentState = "idle" | "listening" | "thinking" | "speaking" | "connected" | "connecting" | "disconnected"
+
+export const useAmelieWebSocket = (url: string) => {
   const [agentState, setAgentState] = useState<AgentState>("disconnected")
-  const [transcript, setTranscript] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [transcript, setTranscript] = useState("")
   
   const wsRef = useRef<WebSocket | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
   const audioQueueRef = useRef<Float32Array[]>([])
   const isPlayingRef = useRef(false)
-  const analyserRef = useRef<AnalyserNode | null>(null)
-  const dataArrayRef = useRef<Uint8Array | null>(null)
-
-  const connect = useCallback(() => {
-    if (wsRef.current) return
-    setAgentState("connecting")
-
-    const ws = new WebSocket(url)
-    wsRef.current = ws
-
-    // Track the current message ID to prevent duplication from multiple calls or re-renders
-    let currentAssistantMessageIndex = -1;
-
-    ws.onopen = () => {
-      setAgentState("connected")
-      // ... same audio context init
-      
-      // Initialize Audio Context for playing TTS
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
-        analyserRef.current = audioContextRef.current.createAnalyser()
-        analyserRef.current.fftSize = 256
-        dataArrayRef.current = new Uint8Array(analyserRef.current.frequencyBinCount)
-        analyserRef.current.connect(audioContextRef.current.destination)
-      } else if (audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume()
-      }
-    }
-
-    ws.onmessage = async (event) => {
-      try {
-        const msg = JSON.parse(event.data)
-        if (msg.type === "status") {
-          setAgentState(msg.state)
-        } else if (msg.type === "transcript") {
-          setTranscript(msg.data)
-          setMessages(prev => [...prev, { role: "user", content: msg.data }])
-        } else if (msg.type === "text_chunk") {
-          setMessages(prev => {
-             const newMessages = [...prev]
-             if (newMessages.length === 0 || newMessages[newMessages.length - 1].role === "user") {
-                 newMessages.push({ role: "assistant", content: msg.data })
-             } else {
-                 newMessages[newMessages.length - 1].content += msg.data
-             }
-             return newMessages
-          })
-        } else if (msg.type === "audio_chunk") {
-          // Decode base64 to array buffer
-          const binaryStr = window.atob(msg.data)
-          const len = binaryStr.length
-          const bytes = new Uint8Array(len)
-          for (let i = 0; i < len; i++) {
-            bytes[i] = binaryStr.charCodeAt(i)
-          }
-          
-          if (audioContextRef.current) {
-            // If the backend sends chunks of a larger encoded file (WAV/MP3),
-            // decodeAudioData might fail on middle chunks.
-            // We'll try to decode it, and if it fails, we'll buffer it.
-            try {
-              const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer)
-              audioQueueRef.current.push(audioBuffer.getChannelData(0))
-              playNextInQueue()
-            } catch (e) {
-               // If decoding fails, it might be raw PCM or a partial chunk.
-               // For now, we assume the backend sends valid playable chunks.
-               console.warn("Chunk decoding failed — backend should send playable chunks.")
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error parsing WS message", e)
-      }
-    }
-
-    ws.onclose = () => {
-      setAgentState("disconnected")
-      wsRef.current = null
-      setMessages([])
-    }
-
-    ws.onerror = (error) => {
-      console.error("WebSocket error", error)
-      setAgentState("disconnected")
-      setMessages([])
-    }
-  }, [url])
-
-  const disconnect = useCallback(() => {
-    if (wsRef.current) {
-      wsRef.current.close()
-      wsRef.current = null
-    }
-    setAgentState("disconnected")
-    setMessages([])
-  }, [])
 
   const playNextInQueue = useCallback(() => {
-    if (isPlayingRef.current || audioQueueRef.current.length === 0 || !audioContextRef.current) return
-    
+    if (!audioContextRef.current || audioQueueRef.current.length === 0 || isPlayingRef.current) return
+
     isPlayingRef.current = true
     const audioData = audioQueueRef.current.shift()!
-    
-    const buffer = audioContextRef.current.createBuffer(1, audioData.length, 22050) // Sarvam Bulbul sample rate
-    buffer.copyToChannel(audioData as any, 0)
-    
+    const buffer = audioContextRef.current.createBuffer(1, audioData.length, 16000)
+    buffer.getChannelData(0).set(audioData)
+
     const source = audioContextRef.current.createBufferSource()
     source.buffer = buffer
     source.connect(analyserRef.current!)
@@ -143,50 +37,112 @@ export function useAmelieWebSocket(url: string) {
     source.start()
   }, [])
 
-  const sendAudio = useCallback((base64Audio: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "audio_data", data: base64Audio }))
-    }
-  }, [])
+  const connect = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return
 
-  const sendAudioChunk = useCallback((base64Audio: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "audio_chunk", data: base64Audio }))
-    }
-  }, [])
+    setAgentState("connecting")
+    const ws = new WebSocket(url)
+    wsRef.current = ws
 
-  const sendText = useCallback((text: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      setMessages(prev => [...prev, { role: "user", content: text }])
-      wsRef.current.send(JSON.stringify({ type: "text", data: text }))
+    ws.onopen = () => {
+      setAgentState("connected")
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 })
+        analyserRef.current = audioContextRef.current.createAnalyser()
+        analyserRef.current.connect(audioContextRef.current.destination)
+      }
     }
-  }, [])
 
-  const getOutputVolume = useCallback(() => {
-    if (!analyserRef.current || !dataArrayRef.current) return 0
-    analyserRef.current.getByteFrequencyData(dataArrayRef.current as any)
-    let sum = 0
-    for (let i = 0; i < dataArrayRef.current.length; i++) {
-      sum += dataArrayRef.current[i]
+    ws.onmessage = async (event) => {
+      try {
+        const msg = JSON.parse(event.data)
+        
+        switch (msg.type) {
+          case "status":
+            setAgentState(msg.state)
+            break
+          case "transcript":
+            setTranscript(msg.data)
+            // Prevent double-appending if backend echoes back
+            setMessages(prev => {
+              if (prev.length > 0 && prev[prev.length - 1].role === "user" && prev[prev.length - 1].content === msg.data) {
+                return prev
+              }
+              return [...prev, { role: "user", content: msg.data }]
+            })
+            break
+          case "text_chunk":
+            setMessages(prev => {
+              const lastMsg = prev[prev.length - 1]
+              if (lastMsg?.role === "assistant") {
+                // IMPORTANT: If backend sends full strings instead of deltas, 
+                // we should check if data already starts with last content.
+                // But since we confirmed it's delta, we append.
+                // Added a safety check to avoid duplicating exact repeated chunks.
+                if (msg.data && lastMsg.content.endsWith(msg.data) && msg.data.length > 3) {
+                   return prev
+                }
+                const updated = [...prev]
+                updated[updated.length - 1] = { ...lastMsg, content: lastMsg.content + msg.data }
+                return updated
+              }
+              return [...prev, { role: "assistant", content: msg.data }]
+            })
+            break
+          case "audio_chunk":
+            const binaryStr = window.atob(msg.data)
+            const bytes = new Uint8Array(binaryStr.length)
+            for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+            
+            if (audioContextRef.current) {
+              try {
+                const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer)
+                audioQueueRef.current.push(audioBuffer.getChannelData(0))
+                playNextInQueue()
+              } catch (e) {
+                console.warn("Audio decoding failed", e)
+              }
+            }
+            break
+        }
+      } catch (e) {
+        console.error("WS Message Error", e)
+      }
     }
-    return Math.min(1.0, (sum / dataArrayRef.current.length) / 255 * 2.5)
-  }, [])
+
+    ws.onclose = () => {
+      setAgentState("disconnected")
+      wsRef.current = null
+    }
+
+    ws.onerror = () => {
+      setAgentState("disconnected")
+      wsRef.current = null
+    }
+  }, [url, playNextInQueue])
 
   useEffect(() => {
+    connect()
     return () => {
-      if (wsRef.current) wsRef.current.close()
+      if (wsRef.current) {
+        wsRef.current.close()
+        wsRef.current = null
+      }
     }
-  }, [])
+  }, [connect])
 
-  return {
-    agentState,
-    connect,
-    disconnect,
-    sendAudio,
-    sendAudioChunk,
-    sendText,
-    transcript,
-    messages,
-    getOutputVolume
+  const sendMessage = (text: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "text", data: text }))
+      setMessages(prev => [...prev, { role: "user", content: text }])
+    }
   }
+
+  const sendAudioChunk = (base64Data: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "audio_chunk", data: base64Data }))
+    }
+  }
+
+  return { agentState, messages, sendMessage, sendAudioChunk, transcript }
 }
