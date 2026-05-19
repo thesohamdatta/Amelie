@@ -1,5 +1,6 @@
 <div align="center">
-  <img src="web/public/hero.png" width="180" style="border-radius: 48% 52% 50% 50% / 45% 45% 55% 55%; aspect-ratio: 0.8;" alt="Amélie Face">V
+ <img width="350" height="600" alt="hero" src="https://github.com/user-attachments/assets/5027b7a8-f57f-4e4d-8f04-2c2e36bfdd0c" />
+
   <br/>
   <br/>
   <h1>[ AMÉLIE ]</h1>
