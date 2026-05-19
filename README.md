@@ -1,7 +1,8 @@
 <div align="center">
-  <img src="web/public/amelie-hero.png" width="600" alt="Amélie">
+  <img src="web/public/amelie-face.png" width="180" style="border-radius: 48% 52% 50% 50% / 45% 45% 55% 55%; aspect-ratio: 0.8;" alt="Amélie Face">
   <br/>
   <br/>
+  <h1>[ AMÉLIE ]</h1>
   <p><b>Amélie is not an interface. She is a presence.</b></p>
   <p>A voice-native sentient object for digital intimacy and atmospheric low-latency interaction.</p>
 </div>
@@ -41,8 +42,6 @@ cd web && npm install && npm run dev
 ```
 
 ---
-
-> "She's witty, she's warm, and she's slightly sarcastic. Handle with care."
 
 [ **STATUS:** PHASE-1_LIVE_LOOP ] 
 [ **MADE BY:** thesohamdatta ]

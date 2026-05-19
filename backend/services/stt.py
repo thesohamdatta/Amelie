@@ -4,11 +4,11 @@ Routes to Sarvam Saaras v3 (Hinglish/Hindi) or Whisper (English).
 """
 from __future__ import annotations
 
-import asyncio
 import io
 import logging
 import os
 from typing import Optional
+from pydub import AudioSegment
 
 from sarvamai import SarvamAI
 
@@ -20,15 +20,25 @@ logger = logging.getLogger(__name__)
 def _transcribe_sarvam(audio_bytes: bytes, language_code: str) -> str:
     """Synchronous Sarvam Saaras v3 transcription — run in thread."""
     client = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY", ""))
-    audio_file = io.BytesIO(audio_bytes)
-    audio_file.name = "audio.wav"
+    
+    # Ensure we send a proper WAV file with headers
+    try:
+        audio = AudioSegment.from_file(io.BytesIO(audio_bytes))
+        wav_io = io.BytesIO()
+        audio.export(wav_io, format="wav")
+        wav_io.seek(0)
+        wav_io.name = "audio.wav"
+        audio_file = wav_io
+    except Exception as exc:
+        logger.warning(f"[STT] pydub conversion failed, sending raw bytes: {exc}")
+        audio_file = io.BytesIO(audio_bytes)
+        audio_file.name = "audio.wav"
 
     try:
         response = client.speech_to_text.transcribe(
             file=audio_file,
             model="saaras:v3",
             mode="transcribe",
-            # language_code omitted for Hinglish — auto-detect works
         )
         transcript: str = response.transcript or ""
         logger.info(f"[STT] Sarvam transcript: {transcript!r}")

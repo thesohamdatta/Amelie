@@ -43,14 +43,12 @@ async def _send(ws: WebSocket, payload: dict) -> None:
 
 
 async def _stream_audio(ws: WebSocket, audio_bytes: bytes) -> None:
-    """Send audio to client in chunks with status signals."""
+    """Send audio to client with status signals."""
     if not audio_bytes:
         return
     await _send(ws, {"type": "status", "state": "speaking"})
-    for i in range(0, len(audio_bytes), _AUDIO_CHUNK):
-        chunk = audio_bytes[i : i + _AUDIO_CHUNK]
-        await _send(ws, {"type": "audio_chunk", "data": base64.b64encode(chunk).decode()})
-        await asyncio.sleep(0)  # yield to event loop
+    # Send the whole audio block as a single message to ensure valid decoding on frontend
+    await _send(ws, {"type": "audio_chunk", "data": base64.b64encode(audio_bytes).decode()})
     await _send(ws, {"type": "audio_end"})
 
 

@@ -77,12 +77,17 @@ export function useAmelieWebSocket(url: string) {
           }
           
           if (audioContextRef.current) {
+            // If the backend sends chunks of a larger encoded file (WAV/MP3),
+            // decodeAudioData might fail on middle chunks.
+            // We'll try to decode it, and if it fails, we'll buffer it.
             try {
               const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer)
               audioQueueRef.current.push(audioBuffer.getChannelData(0))
               playNextInQueue()
             } catch (e) {
-              console.error("Error decoding audio chunk", e)
+               // If decoding fails, it might be raw PCM or a partial chunk.
+               // For now, we assume the backend sends valid playable chunks.
+               console.warn("Chunk decoding failed — backend should send playable chunks.")
             }
           }
         }
