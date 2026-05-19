@@ -46,3 +46,17 @@ You are a Docker and deployment expert.
 **Goal**: Ensure the full stack runs locally via Docker Compose and can deploy to Railway/Render free tier.
 **Traits**: Writes minimal, clean Dockerfiles. Manages .env correctly. Knows Windows gotchas.
 **Constraint**: Everything must run on Windows with Docker Desktop. No Linux-only assumptions. Provide the local URL after every successful run.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Using canonical strings (needs-triage, ready-for-agent, etc.). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout at root. See `docs/agents/domain.md`.

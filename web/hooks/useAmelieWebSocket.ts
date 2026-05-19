@@ -8,6 +8,7 @@ export type AgentState =
   | "connected"
   | "thinking"
   | "speaking"
+  | "listening"
   | "idle"
 
 export interface ChatMessage {
@@ -125,7 +126,7 @@ export function useAmelieWebSocket(url: string) {
     const audioData = audioQueueRef.current.shift()!
     
     const buffer = audioContextRef.current.createBuffer(1, audioData.length, 22050) // Sarvam Bulbul sample rate
-    buffer.copyToChannel(audioData, 0)
+    buffer.copyToChannel(audioData as any, 0)
     
     const source = audioContextRef.current.createBufferSource()
     source.buffer = buffer
@@ -159,7 +160,7 @@ export function useAmelieWebSocket(url: string) {
 
   const getOutputVolume = useCallback(() => {
     if (!analyserRef.current || !dataArrayRef.current) return 0
-    analyserRef.current.getByteFrequencyData(dataArrayRef.current)
+    analyserRef.current.getByteFrequencyData(dataArrayRef.current as any)
     let sum = 0
     for (let i = 0; i < dataArrayRef.current.length; i++) {
       sum += dataArrayRef.current[i]
