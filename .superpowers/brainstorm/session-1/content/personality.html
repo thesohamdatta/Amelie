@@ -1,0 +1,38 @@
+<h2>Visual Sentience: The Orb's Personality</h2>
+<p class="subtitle">How should Amélie express herself while listening and thinking?</p>
+
+<div class="options">
+  <div class="option" data-choice="reactive" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>The Reactive Pulse</h3>
+      <p>The Orb acts like a high-fidelity visualizer, vibrating and pulsing precisely with every sound wave and thought process. High energy, very "live".</p>
+      <div class="mockup" style="height: 100px; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 1rem; margin-top: 10px;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle, #FDBA74, transparent); filter: blur(4px); animation: pulse 1s infinite alternate;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="expressive" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>The Expressive Morph</h3>
+      <p>The Orb shifts through smooth, fluid states. It doesn't just "bounce"—it grows, shrinks, and changes colors based on the *emotion* or *intent* of the conversation. More "organic".</p>
+       <div class="mockup" style="height: 100px; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 1rem; margin-top: 10px;">
+        <div style="width: 50px; height: 50px; border-radius: 40% 60% 70% 30% / 40% 50% 60% 70%; background: linear-gradient(45deg, #7C3AED, #FDBA74); filter: blur(2px); animation: morph 3s infinite linear;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  from { transform: scale(1); opacity: 0.8; }
+  to { transform: scale(1.5); opacity: 1; }
+}
+@keyframes morph {
+  0% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 70%; transform: rotate(0deg); }
+  50% { border-radius: 60% 40% 30% 70% / 50% 70% 40% 60%; }
+  100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 70%; transform: rotate(360deg); }
+}
+</style>

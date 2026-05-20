@@ -9,6 +9,7 @@ export type AgentState = "idle" | "listening" | "thinking" | "speaking" | "conne
 
 export const useAmelieWebSocket = (url: string) => {
   const [agentState, setAgentState] = useState<AgentState>("disconnected")
+  const [emotion, setEmotion] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [transcript, setTranscript] = useState("")
   
@@ -60,6 +61,7 @@ export const useAmelieWebSocket = (url: string) => {
         switch (msg.type) {
           case "status":
             setAgentState(msg.state)
+            if (msg.emotion) setEmotion(msg.emotion)
             break
           case "transcript":
             setTranscript(msg.data)
@@ -104,6 +106,9 @@ export const useAmelieWebSocket = (url: string) => {
               }
             }
             break
+          case "audio_end":
+            // Optional: can use this to trigger state changes
+            break
         }
       } catch (e) {
         console.error("WS Message Error", e)
@@ -112,11 +117,13 @@ export const useAmelieWebSocket = (url: string) => {
 
     ws.onclose = () => {
       setAgentState("disconnected")
+      setEmotion(null)
       wsRef.current = null
     }
 
     ws.onerror = () => {
       setAgentState("disconnected")
+      setEmotion(null)
       wsRef.current = null
     }
   }, [url, playNextInQueue])
@@ -131,7 +138,7 @@ export const useAmelieWebSocket = (url: string) => {
     }
   }, [connect])
 
-  const sendMessage = (text: string) => {
+  const sendText = (text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "text", data: text }))
       setMessages(prev => [...prev, { role: "user", content: text }])
@@ -144,5 +151,27 @@ export const useAmelieWebSocket = (url: string) => {
     }
   }
 
-  return { agentState, messages, sendMessage, sendAudioChunk, transcript }
+  const getOutputVolume = useCallback(() => {
+    if (!analyserRef.current) return 0
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount)
+    analyserRef.current.getByteFrequencyData(dataArray)
+    let sum = 0
+    for (let i = 0; i < dataArray.length; i++) {
+      sum += dataArray[i]
+    }
+    return Math.min(1.0, (sum / dataArray.length) / 128)
+  }, [])
+
+  return { 
+    agentState, 
+    emotion, 
+    messages, 
+    sendText, 
+    sendAudioChunk, 
+    transcript, 
+    getOutputVolume, 
+    connect, 
+    disconnect: () => wsRef.current?.close(),
+    audioContext: audioContextRef.current
+  }
 }
