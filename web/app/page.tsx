@@ -158,18 +158,18 @@ export default function AmelieHome() {
               className="absolute inset-0 flex flex-col items-center justify-center"
             >
               <motion.div
+                layout
+                initial={false}
                 animate={{
-                  scale: isCallActive ? [1, 1.05, 1] : [0.98, 1, 0.98],
+                  scale: isCallActive ? 1.05 : 1,
+                  width: isCallActive ? 288 : 224, // size-72 : size-56
+                  height: isCallActive ? 288 : 224,
                 }}
                 transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
+                  layout: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+                  scale: { duration: 8, repeat: Infinity, ease: "easeInOut" }
                 }}
-                className={cn(
-                  "relative transition-all duration-1000 ease-in-out",
-                  isCallActive ? "size-72" : "size-56"
-                )}
+                className="relative"
               >
                 <Orb
                   className="h-full w-full"
