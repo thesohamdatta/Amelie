@@ -203,6 +203,52 @@ async def stream_response(
         yield "I'm having trouble connecting right now."
 
 
+async def get_raw_response(messages: List[dict]) -> str:
+    """Get a full, non-streaming response from the default LLM provider."""
+    provider = os.getenv("LLM_PROVIDER", "groq")
+    
+    if provider == "groq":
+        from groq import AsyncGroq
+        client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY", ""))
+        model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+        try:
+            completion = await client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=False,
+            )
+            return completion.choices[0].message.content or ""
+        except Exception as exc:
+            logger.error(f"[LLM] Groq raw error: {exc}")
+            return ""
+    elif provider == "openai":
+        from openai import AsyncOpenAI
+        client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY", ""))
+        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        try:
+            completion = await client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=False,
+            )
+            return completion.choices[0].message.content or ""
+        except Exception as exc:
+            logger.error(f"[LLM] OpenAI raw error: {exc}")
+            return ""
+    elif provider == "gemini":
+        import google.generativeai as genai
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
+        model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        try:
+            model = genai.GenerativeModel(model_name=model_name)
+            response = await model.generate_content_async(messages[-1]["content"])
+            return response.text
+        except Exception as exc:
+            logger.error(f"[LLM] Gemini raw error: {exc}")
+            return ""
+    return ""
+
+
 async def get_greeting(soul: Soul) -> str:
     """Generate a short greeting under 8 words based on greeting_style."""
     hour = datetime.now().hour

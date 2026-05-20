@@ -67,6 +67,52 @@ def add_message(session_id: str, role: str, content: str) -> None:
         except Exception as e:
             logger.error(f"[Memory] Chroma error: {e}")
 
+def store_fact(fact: str) -> None:
+    """
+    Persist a new fact about the user. 
+    Appends to existing facts if they exist.
+    """
+    if not fact.strip():
+        return
+        
+    current_facts = sqlite.get_profile_value("user_facts", "")
+    if current_facts:
+        new_facts = f"{current_facts}\n{fact}"
+    else:
+        new_facts = fact
+        
+    sqlite.set_profile_value("user_facts", new_facts)
+    logger.info(f"[Memory] Stored new fact: {fact}")
+
+_FACT_EXTRACTION_PROMPT = """You are an background memory processor for Amélie. 
+Analyze the following conversation transcript and extract any NEW, PERSISTENT facts about the user (preferences, background, relationships, location).
+
+Transcript:
+{transcript}
+
+Rules:
+1. Only extract new information not already known.
+2. Be extremely concise. Example: "User lives in Mumbai." or "User prefers dark chocolate."
+3. If no new facts are found, strictly respond with "NONE".
+4. Do not include pleasantries.
+"""
+
+async def extract_and_store_facts(transcript: str) -> None:
+    """
+    Background task: Use LLM to extract new facts from a transcript
+    and save them to Core Personal Memory.
+    """
+    from backend.services import llm  # lazy import
+    
+    prompt = _FACT_EXTRACTION_PROMPT.format(transcript=transcript)
+    
+    try:
+        fact = await llm.get_raw_response([{"role": "user", "content": prompt}])
+        if fact and fact.strip().upper() != "NONE":
+            store_fact(fact.strip())
+    except Exception as e:
+        logger.error(f"[Memory] Fact extraction error: {e}")
+
 def clear_session(session_id: str) -> None:
     """Clear Redis history for a session (Redis or fallback)."""
     if r:

@@ -12,17 +12,19 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Orb } from "@/components/ui/orb"
 import { useAmelieWebSocket } from "@/hooks/useAmelieWebSocket"
-import { LiveWaveform } from "@/components/ui/live-waveform"
+import { Response } from "@/components/ui/response"
 import {
+  Orb,
+  LiveWaveform,
   Conversation,
   ConversationContent,
   ConversationScrollButton,
-} from "@/components/ui/conversation"
-import { Message, MessageContent } from "@/components/ui/message"
-import { Response } from "@/components/ui/response"
+  Message,
+  MessageContent,
+  ConversationBar,
+  ShimmeringText,
+} from "@/components/elevenlabs"
 
 // ─── Map Amélie agent states → Orb's expected AgentState type ───────────────
 // Orb accepts: null | "thinking" | "listening" | "talking"
@@ -63,7 +65,6 @@ export default function AmelieHome() {
     agentState,
     connect,
     disconnect,
-    sendAudio,
     sendAudioChunk,
     sendText,
     messages,
@@ -82,7 +83,6 @@ export default function AmelieHome() {
   const streamRef = useRef<MediaStream | null>(null)
   const inputAnalyserRef = useRef<AnalyserNode | null>(null)
   const inputDataArrayRef = useRef<Uint8Array | null>(null)
-  const textInputRef = useRef<HTMLInputElement>(null)
 
   // ─── Backend health check ─────────────────────────────────────────────────
   useEffect(() => {
@@ -203,19 +203,7 @@ export default function AmelieHome() {
     })
   }, [])
 
-  const handleTextSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault()
-      if (!inputText.trim()) return
-      if (agentState === "disconnected") {
-        // auto-connect on first text message
-        connect()
-      }
-      sendText(inputText.trim())
-      setInputText("")
-    },
-    [inputText, agentState, sendText, connect]
-  )
+
 
   const getInputVolume = useCallback(() => {
     if (isMicMuted || !inputAnalyserRef.current || !inputDataArrayRef.current)
@@ -327,10 +315,14 @@ export default function AmelieHome() {
               />
             </motion.div>
 
-            <div className="text-center space-y-1.5">
-              <p className="text-sm font-medium text-body-strong tracking-tight">
-                {isCallActive ? statusLabel : "Say Hi to Amélie"}
-              </p>
+            <div className="text-center space-y-1.5 flex flex-col items-center">
+              <div className="text-sm font-medium tracking-tight h-5 flex items-center justify-center">
+                {isCallActive ? (
+                  <ShimmeringText text={statusLabel} className="text-body-strong" />
+                ) : (
+                  <span className="text-body-strong">Say Hi to Amélie</span>
+                )}
+              </div>
               <p className="text-xs text-body opacity-50">
                 {isCallActive
                   ? "Voice is active — speak or type below"
@@ -390,131 +382,22 @@ export default function AmelieHome() {
       {/* ── Bottom Control Bar ─────────────────────────────────────────── */}
       <div className="absolute bottom-6 w-full px-4 flex justify-center z-20">
         <div className="w-full max-w-xl">
-          <motion.div
-            layout
-            className="glass-bar rounded-[2rem] p-2 flex flex-col gap-2"
-          >
-            {/* Text Input — always accessible */}
-            <AnimatePresence>
-              {isTextMode && (
-                <motion.form
-                  key="text-form"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                  onSubmit={handleTextSubmit}
-                  className="px-2 pt-2 pb-1 relative overflow-hidden"
-                >
-                  <input
-                    ref={textInputRef}
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    placeholder={
-                      isCallActive
-                        ? "Message Amélie…"
-                        : "Type to start a conversation…"
-                    }
-                    className="w-full bg-white/5 border border-white/10 rounded-full pl-5 pr-12 py-3 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-white/20 placeholder:text-body/40"
-                    autoFocus
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    type="submit"
-                    disabled={!inputText.trim()}
-                    className="absolute right-3 top-3.5 h-8 w-8 bg-white/10 text-ink hover:bg-white/20 rounded-full transition-all disabled:opacity-30"
-                  >
-                    <ArrowUpIcon className="size-4" />
-                  </Button>
-                </motion.form>
-              )}
-            </AnimatePresence>
-
-            {/* Controls row */}
-            <div className="flex items-center justify-between px-2 py-1 h-14">
-              {/* Left: waveform or label */}
-              <div className="flex-1 flex items-center justify-start pl-2">
-                {isCallActive ? (
-                  <div className="w-24 h-8 flex items-center justify-center opacity-60">
-                    <LiveWaveform
-                      active={!isMicMuted && !isSpeaking && !isThinking}
-                      barWidth={2}
-                      barGap={2}
-                      height={24}
-                      smoothingTimeConstant={0.5}
-                      className="text-ink"
-                    />
-                  </div>
-                ) : (
-                  <span className="text-muted-text text-[10px] uppercase tracking-[0.12em] font-semibold ml-2">
-                    Voice Chat
-                  </span>
-                )}
-              </div>
-
-              {/* Right: action buttons */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                {/* Keyboard toggle — always visible */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setIsTextMode((v) => !v)
-                    setTimeout(() => textInputRef.current?.focus(), 100)
-                  }}
-                  className={cn(
-                    "size-12 rounded-full transition-colors",
-                    isTextMode
-                      ? "bg-white/10 text-ink"
-                      : "text-body hover:bg-white/5 hover:text-ink"
-                  )}
-                >
-                  <KeyboardIcon className="size-5" />
-                </Button>
-
-                {/* Mic mute — only when call active */}
-                {isCallActive && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleMic}
-                    className={cn(
-                      "size-12 rounded-full transition-colors",
-                      isMicMuted
-                        ? "bg-red-500/15 text-red-400 hover:bg-red-500/25"
-                        : "text-body hover:bg-white/5 hover:text-ink"
-                    )}
-                  >
-                    {isMicMuted ? (
-                      <MicOffIcon className="size-5" />
-                    ) : (
-                      <MicIcon className="size-5" />
-                    )}
-                  </Button>
-                )}
-
-                {/* Phone call button */}
-                <Button
-                  onClick={handleCall}
-                  size="icon"
-                  className={cn(
-                    "size-12 rounded-full ml-1 transition-all",
-                    isCallActive
-                      ? "bg-white/8 text-ink hover:bg-white/15 border border-white/10"
-                      : "bg-white/90 text-canvas hover:bg-white"
-                  )}
-                >
-                  {isCallActive ? (
-                    <PhoneOffIcon className="size-5" />
-                  ) : (
-                    <PhoneIcon className="size-5" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </motion.div>
+          <ConversationBar
+            agentState={agentState}
+            isMicMuted={isMicMuted}
+            isTextMode={isTextMode}
+            inputText={inputText}
+            setInputText={setInputText}
+            setIsTextMode={setIsTextMode}
+            toggleMic={toggleMic}
+            handleCall={handleCall}
+            onSendMessage={(msg) => {
+              if (agentState === "disconnected") {
+                connect()
+              }
+              sendText(msg)
+            }}
+          />
         </div>
       </div>
     </main>
