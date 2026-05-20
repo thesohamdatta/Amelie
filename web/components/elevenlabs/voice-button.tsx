@@ -5,7 +5,7 @@ import { CheckIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LiveWaveform } from "@/components/ui/live-waveform"
+import { LiveWaveform } from "./live-waveform"
 
 export type VoiceButtonState =
   | "idle"
