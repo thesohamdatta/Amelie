@@ -123,17 +123,29 @@ def clear_session(session_id: str) -> None:
     else:
         _fallback_history.pop(session_id, None)
 
-def build_memory_block(session_id: str, query: str = "") -> str:
+async def build_memory_block(session_id: str, query: str = "") -> str:
     """
     Construct the context block for LLM.
     Includes persistent profile and relevant semantic memories.
+    Uses HyDE (Hypothetical Document Embeddings) if a query is provided.
     """
+    from backend.services import llm  # lazy import
+    
     profile = sqlite.get_profile_value("user_facts", "No facts known yet.")
     past_summaries = sqlite.get_all_summaries()
     
     semantic_hits = ""
     if query:
-        hits = chroma.query_memory(query)
+        # HyDE: Generate a hypothetical answer to improve semantic search
+        hyde_prompt = f"Write a brief, hypothetical answer to the following user query to help in searching a memory database: \"{query}\""
+        try:
+            hyde_answer = await llm.get_raw_response([{"role": "user", "content": hyde_prompt}])
+            search_query = hyde_answer if hyde_answer else query
+        except Exception as e:
+            logger.warning(f"[Memory] HyDE generation failed: {e}")
+            search_query = query
+            
+        hits = chroma.query_memory(search_query)
         if hits:
             semantic_hits = "\nRelevant past snippets: " + " | ".join(hits)
             
