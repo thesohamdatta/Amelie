@@ -6,7 +6,7 @@ from backend.db import sqlite
 
 def test_store_fact_persistence():
     """
-    RED: Test that store_fact successfully saves a new fact to the database.
+    Test that store_fact successfully saves a new fact to the database.
     """
     test_key = "user_facts"
     test_fact = "User likes black coffee."
@@ -17,7 +17,7 @@ def test_store_fact_persistence():
 
 def test_store_fact_append():
     """
-    RED: Test that store_fact appends to existing facts rather than overwriting.
+    Test that store_fact appends to existing facts rather than overwriting.
     """
     test_key = "user_facts"
     sqlite.set_profile_value(test_key, "User has a dog.")
@@ -29,7 +29,7 @@ def test_store_fact_append():
 @pytest.mark.asyncio
 async def test_extract_and_store_facts():
     """
-    RED: Test that extract_and_store_facts correctly identifies a fact 
+    Test that extract_and_store_facts correctly identifies a fact 
     from a transcript and calls store_fact.
     """
     transcript = "User: I love drinking black coffee in the morning.\nAmélie: That's good to know!"
@@ -44,7 +44,7 @@ async def test_extract_and_store_facts():
 @pytest.mark.asyncio
 async def test_extract_and_store_facts_no_fact():
     """
-    RED: Test that it doesn't store anything if no facts are found.
+    Test that it doesn't store anything if no facts are found.
     """
     transcript = "User: Hello.\nAmélie: Hi there!"
     
@@ -58,7 +58,7 @@ async def test_extract_and_store_facts_no_fact():
 @pytest.mark.asyncio
 async def test_build_memory_block_with_hyde():
     """
-    RED: Test that build_memory_block uses HyDE (LLM-generated hypothetical answer)
+    Test that build_memory_block uses HyDE (LLM-generated hypothetical answer)
     to search ChromaDB.
     """
     session_id = "test-session"
@@ -74,10 +74,25 @@ async def test_build_memory_block_with_hyde():
             with patch("backend.db.sqlite.get_profile_value") as mock_sqlite:
                 mock_sqlite.return_value = "User lives in Goa."
                 
-                # We need to make build_memory_block async to use LLM
                 memory_block = await memory.build_memory_block(session_id, user_query)
                 
                 assert "User loves black coffee." in memory_block
-                # Verify Chroma was searched with the HyDE answer, not the user query
                 mock_chroma.assert_called_with(hyde_answer)
-                mock_llm.assert_called()
+
+@pytest.mark.asyncio
+async def test_summarise_and_persist_llm():
+    """
+    Test that summarise_and_persist uses LLM to generate a summary.
+    """
+    session_id = "test-session-long"
+    transcript = "User: I had a great day. I visited the beach and ate mangoes.\nAmélie: That sounds lovely!"
+    expected_summary = "User had a great day at the beach eating mangoes."
+    
+    with patch("backend.services.llm.get_raw_response", new_callable=AsyncMock) as mock_llm:
+        mock_llm.return_value = expected_summary
+        
+        with patch("backend.db.sqlite.save_session_summary") as mock_save:
+            await memory.summarise_and_persist(session_id, transcript)
+            
+            mock_save.assert_called_with(session_id, expected_summary)
+            mock_llm.assert_called()

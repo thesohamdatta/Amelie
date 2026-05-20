@@ -1,28 +1,20 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { AnimatePresence, motion } from "framer-motion"
-import {
-  PhoneIcon,
-  PhoneOffIcon,
-  MicIcon,
-  MicOffIcon,
-  ArrowUpIcon,
-  KeyboardIcon,
-} from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { motion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 import { useAmelieWebSocket } from "@/hooks/useAmelieWebSocket"
 import { Response } from "@/components/ui/response"
 import {
   Orb,
-  LiveWaveform,
   Conversation,
   ConversationContent,
   ConversationScrollButton,
   Message,
   MessageContent,
   ConversationBar,
+  getMessagePresentation,
   ShimmeringText,
 } from "@/components/elevenlabs"
 
@@ -69,20 +61,51 @@ export default function AmelieHome() {
     sendText,
     messages,
     getOutputVolume,
+    stopPlayback,
   } = useAmelieWebSocket("ws://localhost:8000/ws/chat")
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isTextMode, setIsTextMode] = useState(false)
   const [inputText, setInputText] = useState("")
   const [isMicMuted, setIsMicMuted] = useState(false)
-  const [currentEmotion, setCurrentEmotion] = useState<string | null>(null)
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null)
 
+  // ─── Barge-in Detection ───────────────────────────────────────────────────
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
   const inputAnalyserRef = useRef<AnalyserNode | null>(null)
-  const inputDataArrayRef = useRef<Uint8Array | null>(null)
+  const inputDataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null)
+
+  const getInputVolume = useCallback(() => {
+    if (isMicMuted || !inputAnalyserRef.current || !inputDataArrayRef.current)
+      return 0
+    inputAnalyserRef.current.getByteFrequencyData(inputDataArrayRef.current)
+    let sum = 0
+    for (let i = 0; i < inputDataArrayRef.current.length; i++) {
+      sum += inputDataArrayRef.current[i]
+    }
+    return Math.min(
+      1.0,
+      Math.pow((sum / inputDataArrayRef.current.length) / 255, 0.5) * 2.5
+    )
+  }, [isMicMuted])
+
+  useEffect(() => {
+    if (agentState !== "speaking" || isMicMuted) return
+
+    let animationFrameId: number
+    const checkBargeIn = () => {
+      const volume = getInputVolume()
+      if (volume > 0.15) {
+        stopPlayback()
+      }
+      animationFrameId = requestAnimationFrame(checkBargeIn)
+    }
+
+    animationFrameId = requestAnimationFrame(checkBargeIn)
+    return () => cancelAnimationFrame(animationFrameId)
+  }, [agentState, isMicMuted, getInputVolume, stopPlayback])
 
   // ─── Backend health check ─────────────────────────────────────────────────
   useEffect(() => {
@@ -104,38 +127,28 @@ export default function AmelieHome() {
   // ─── Track emotion from WS messages ──────────────────────────────────────
   // The WS hook doesn't expose emotion — we listen for it via a custom event
   // emitted from the hook. For now we detect emotion from message content.
-  useEffect(() => {
-    if (messages.length === 0) return
+  const currentEmotion = useMemo(() => {
+    if (messages.length === 0) return null
     const last = messages[messages.length - 1]
-    if (last.role !== "assistant") return
+    if (last.role !== "assistant") return null
     const text = last.content.toLowerCase()
     if (
       text.includes("haha") ||
       text.includes("lol") ||
       text.includes("awesome")
     ) {
-      setCurrentEmotion("joy")
-    } else if (
+      return "joy"
+    }
+    if (
       text.includes("sorry") ||
       text.includes("sad") ||
       text.includes("miss")
     ) {
-      setCurrentEmotion("thoughtful")
-    } else if (text.includes("?")) {
-      setCurrentEmotion("curious")
-    } else {
-      setCurrentEmotion(null)
+      return "thoughtful"
     }
+    if (text.includes("?")) return "curious"
+    return null
   }, [messages])
-
-  const stopRecording = useCallback(() => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state === "recording"
-    ) {
-      mediaRecorderRef.current.stop()
-    }
-  }, [])
 
   const startRecording = useCallback(async () => {
     try {
@@ -143,8 +156,16 @@ export default function AmelieHome() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      const audioContext = new (window.AudioContext ||
-        (window as any).webkitAudioContext)()
+      const BrowserAudioContext =
+        window.AudioContext ||
+        (window as Window &
+          typeof globalThis & {
+            webkitAudioContext?: typeof AudioContext
+          }).webkitAudioContext
+      if (!BrowserAudioContext) {
+        throw new Error("Web Audio API is not supported in this browser.")
+      }
+      const audioContext = new BrowserAudioContext()
       const source = audioContext.createMediaStreamSource(stream)
       const analyser = audioContext.createAnalyser()
       analyser.fftSize = 256
@@ -202,28 +223,7 @@ export default function AmelieHome() {
       return next
     })
   }, [])
-
-
-
-  const getInputVolume = useCallback(() => {
-    if (isMicMuted || !inputAnalyserRef.current || !inputDataArrayRef.current)
-      return 0
-    inputAnalyserRef.current.getByteFrequencyData(
-      inputDataArrayRef.current as any
-    )
-    let sum = 0
-    for (let i = 0; i < inputDataArrayRef.current.length; i++) {
-      sum += inputDataArrayRef.current[i]
-    }
-    return Math.min(
-      1.0,
-      Math.pow((sum / inputDataArrayRef.current.length) / 255, 0.5) * 2.5
-    )
-  }, [isMicMuted])
-
   const isCallActive = agentState !== "disconnected"
-  const isSpeaking = agentState === "speaking"
-  const isThinking = agentState === "thinking"
 
   const orbState = toOrbState(agentState)
   const orbColors = toOrbColors(currentEmotion)
@@ -333,22 +333,25 @@ export default function AmelieHome() {
         ) : (
           /* ── Conversation ──────────────────────────────────────────── */
           <Conversation className="absolute inset-0">
-            <ConversationContent className="flex min-w-0 flex-col gap-3 p-6 pb-6">
+            <ConversationContent
+              className={cn(
+                "flex min-w-0 flex-col gap-3 p-6",
+                isTextMode ? "pb-56" : "pb-36"
+              )}
+            >
               {messages.map((message, index) => (
                 <div key={index} className="flex w-full flex-col gap-1 mt-2">
                   <Message from={message.role}>
                     <MessageContent
                       className={cn(
-                        "max-w-full min-w-0 text-sm",
-                        message.role === "user" ? "ml-auto" : ""
+                        "min-w-0 text-sm",
+                        getMessagePresentation(message.role).contentClassName
                       )}
                     >
                       <Response
                         className={cn(
-                          "w-auto [overflow-wrap:anywhere] whitespace-pre-wrap leading-relaxed px-4 py-2.5 rounded-2xl text-sm",
-                          message.role === "user"
-                            ? "bg-surface-glass border border-hairline text-ink ml-auto"
-                            : "text-body-strong"
+                          "w-auto [overflow-wrap:anywhere] whitespace-pre-wrap leading-relaxed text-sm",
+                          getMessagePresentation(message.role).responseClassName
                         )}
                       >
                         {message.content}
@@ -374,7 +377,12 @@ export default function AmelieHome() {
                 </div>
               ))}
             </ConversationContent>
-            <ConversationScrollButton className="bottom-[100px] z-50 bg-surface-card hover:bg-surface-strong border border-hairline text-ink" />
+            <ConversationScrollButton
+              className={cn(
+                "z-50 border border-hairline bg-surface-card text-ink hover:bg-surface-strong",
+                isTextMode ? "bottom-[220px]" : "bottom-[112px]"
+              )}
+            />
           </Conversation>
         )}
       </div>

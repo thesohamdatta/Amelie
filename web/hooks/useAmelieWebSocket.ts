@@ -18,6 +18,20 @@ export const useAmelieWebSocket = (url: string) => {
   const analyserRef = useRef<AnalyserNode | null>(null)
   const audioQueueRef = useRef<Float32Array[]>([])
   const isPlayingRef = useRef(false)
+  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
+
+  const stopPlayback = useCallback(() => {
+    audioQueueRef.current = []
+    if (currentSourceRef.current) {
+      currentSourceRef.current.stop()
+      currentSourceRef.current = null
+    }
+    isPlayingRef.current = false
+    
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "interrupt" }))
+    }
+  }, [])
 
   const playNextInQueue = useCallback(() => {
     if (!audioContextRef.current || audioQueueRef.current.length === 0 || isPlayingRef.current) return
@@ -28,10 +42,12 @@ export const useAmelieWebSocket = (url: string) => {
     buffer.getChannelData(0).set(audioData)
 
     const source = audioContextRef.current.createBufferSource()
+    currentSourceRef.current = source
     source.buffer = buffer
     source.connect(analyserRef.current!)
     
     source.onended = () => {
+      currentSourceRef.current = null
       isPlayingRef.current = false
       playNextInQueue()
     }
@@ -172,6 +188,7 @@ export const useAmelieWebSocket = (url: string) => {
     getOutputVolume, 
     connect, 
     disconnect: () => wsRef.current?.close(),
-    audioContext: audioContextRef.current
+    audioContext: audioContextRef.current,
+    stopPlayback
   }
 }

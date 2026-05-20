@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card"
 import { LiveWaveform } from "@/components/ui/live-waveform"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
+import { getConversationBarPresentation } from "./presentation"
 
 export interface ConversationBarProps {
   /**
@@ -97,9 +98,12 @@ export const ConversationBar = React.forwardRef<
   ) => {
     const textInputRef = React.useRef<HTMLTextAreaElement>(null)
 
-    const isConnected = agentState !== "disconnected" && agentState !== "connecting"
-    const isConnecting = agentState === "connecting"
-    const isCallActive = agentState !== "disconnected"
+    const bar = getConversationBarPresentation({
+      agentState,
+      inputText,
+      isMicMuted,
+      isTextMode,
+    })
 
     const handleSendText = React.useCallback(() => {
       if (!inputText.trim()) return
@@ -122,17 +126,17 @@ export const ConversationBar = React.forwardRef<
         ref={ref}
         className={cn("flex w-full items-end justify-center p-4", className)}
       >
-        <Card className="m-0 w-full gap-0 border p-0 shadow-lg bg-surface-glass border-hairline backdrop-blur-xl">
+        <Card className="glass-bar m-0 w-full gap-0 rounded-[1.75rem] border-hairline p-0 shadow-[0_18px_60px_rgba(12,10,9,0.12)]">
           <div className="flex flex-col-reverse">
             <div>
-              {isTextMode && <Separator className="bg-white/10" />}
+              {isTextMode && <Separator className="bg-hairline" />}
               <div className="flex items-center justify-between gap-2 p-2">
                 {/* Left side: Waveform or status text */}
-                <div className="h-8 w-[120px] md:h-10">
+                <div className="h-11 w-[132px] md:w-[148px]">
                   <div
                     className={cn(
-                      "flex h-full items-center gap-2 rounded-md py-1",
-                      "bg-foreground/5 text-foreground/70"
+                      "flex h-full items-center gap-2 rounded-[1rem] border border-hairline-soft px-3 py-1",
+                      "bg-surface-strong/70 text-body"
                     )}
                   >
                     <div className="h-full flex-1">
@@ -148,8 +152,8 @@ export const ConversationBar = React.forwardRef<
                               ? "idle"
                               : "active"
                           }
-                          active={isCallActive && !isMicMuted}
-                          processing={isConnecting}
+                          active={bar.waveformActive}
+                          processing={bar.waveformProcessing}
                           barWidth={3}
                           barGap={1}
                           barRadius={4}
@@ -160,14 +164,14 @@ export const ConversationBar = React.forwardRef<
                           height={20}
                           mode="static"
                           className={cn(
-                            "h-full w-full transition-opacity duration-300 text-ink",
-                            agentState === "disconnected" && "opacity-0"
+                            "h-full w-full text-ink transition-opacity duration-300",
+                            !bar.isCallActive && "opacity-0"
                           )}
                         />
-                        {agentState === "disconnected" && (
+                        {!bar.isCallActive && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-foreground/50 text-[10px] font-medium uppercase tracking-wider">
-                              Amélie Voice
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-body/70">
+                              {bar.statusText}
                             </span>
                           </div>
                         )}
@@ -184,11 +188,15 @@ export const ConversationBar = React.forwardRef<
                     size="icon"
                     onClick={toggleMic}
                     aria-pressed={isMicMuted}
+                    aria-label={bar.micLabel}
+                    title={bar.micLabel}
                     className={cn(
-                      "size-10 rounded-full transition-colors",
-                      isMicMuted ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "text-body hover:bg-white/5 hover:text-ink"
+                      "size-10 rounded-full transition-colors disabled:opacity-35",
+                      isMicMuted
+                        ? "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                        : "text-body hover:bg-secondary hover:text-ink"
                     )}
-                    disabled={!isCallActive}
+                    disabled={bar.micDisabled}
                   >
                     {isMicMuted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
                   </Button>
@@ -198,13 +206,20 @@ export const ConversationBar = React.forwardRef<
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setIsTextMode((v) => !v)
-                      setTimeout(() => textInputRef.current?.focus(), 100)
+                      setIsTextMode((isOpen) => {
+                        const next = !isOpen
+                        if (next) {
+                          window.setTimeout(() => textInputRef.current?.focus(), 100)
+                        }
+                        return next
+                      })
                     }}
                     aria-pressed={isTextMode}
+                    aria-label={bar.keyboardLabel}
+                    title={bar.keyboardLabel}
                     className={cn(
                       "relative size-10 rounded-full transition-all",
-                      isTextMode ? "bg-white/10 text-ink" : "text-body hover:bg-white/5 hover:text-ink"
+                      isTextMode ? "bg-secondary text-ink" : "text-body hover:bg-secondary hover:text-ink"
                     )}
                   >
                     <Keyboard
@@ -221,21 +236,23 @@ export const ConversationBar = React.forwardRef<
                     />
                   </Button>
 
-                  <Separator orientation="vertical" className="mx-1 h-5 bg-white/10" />
+                  <Separator orientation="vertical" className="mx-1 h-5 bg-hairline" />
 
                   {/* Phone Call / End Call Button */}
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handleCall}
+                    aria-label={bar.callLabel}
+                    title={bar.callLabel}
                     className={cn(
-                      "size-10 rounded-full transition-all",
-                      isCallActive
-                        ? "bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
-                        : "bg-white/90 text-canvas hover:bg-white hover:scale-105"
+                      "size-11 rounded-full border transition-all shadow-sm",
+                      bar.isCallActive
+                        ? "bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20"
+                        : "border-surface-dark bg-surface-dark text-on-primary hover:scale-105 hover:bg-primary-active"
                     )}
                   >
-                    {isCallActive ? (
+                    {bar.isCallActive ? (
                       <XIcon className="h-4 w-4" />
                     ) : (
                       <PhoneIcon className="h-4 w-4" />
@@ -258,19 +275,17 @@ export const ConversationBar = React.forwardRef<
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={
-                    isCallActive
-                      ? "Message Amélie..."
-                      : "Type to start a conversation..."
-                  }
-                  className="min-h-[80px] max-h-[80px] resize-none border-0 bg-transparent pr-12 shadow-none focus-visible:ring-0 text-ink placeholder:text-body/30 text-sm"
+                  placeholder={bar.textareaPlaceholder}
+                  className="min-h-[80px] max-h-[80px] resize-none border-0 bg-transparent pr-12 text-sm text-ink shadow-none placeholder:text-body/35 focus-visible:ring-0"
                 />
                 <Button
                   size="icon"
                   variant="ghost"
                   onClick={handleSendText}
-                  disabled={!inputText.trim()}
-                  className="absolute right-3 bottom-3 h-8 w-8 bg-white/5 hover:bg-white/15 text-ink rounded-full transition-all disabled:opacity-30"
+                  disabled={bar.sendDisabled}
+                  aria-label="Send message"
+                  title="Send message"
+                  className="absolute right-3 bottom-3 h-8 w-8 rounded-full bg-surface-dark text-on-primary transition-all hover:bg-primary-active disabled:bg-secondary disabled:text-body disabled:opacity-45"
                 >
                   <ArrowUpIcon className="h-4 w-4" />
                 </Button>

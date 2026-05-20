@@ -418,8 +418,10 @@ void main() {
     float noise = flow(decomposed, radius * 0.03 - uAnimation * 0.2) - 0.5;
     theta += noise * mix(0.08, 0.25, uOutputVolume);
 
-    // Initialize the base color to white
-    vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
+    // Start from a tinted continuous wash so polar lobes never leave white slices.
+    float baseFlow = flow(decomposed, radius * 0.08 + uAnimation * 0.04);
+    float baseShade = clamp(0.56 + (1.0 - radius) * 0.18 + (baseFlow - 0.5) * 0.1, 0.48, 0.76);
+    vec4 color = vec4(vec3(baseShade), 1.0);
 
     // Original parameters for the ovals in polar coordinates
     float originalCenters[7] = float[7](0.0, 0.5 * PI, 1.0 * PI, 1.5 * PI, 2.0 * PI, 2.5 * PI, 3.0 * PI);
@@ -437,7 +439,7 @@ void main() {
     for (int i = 0; i < 7; i++) {
         float noise = texture(uPerlinTexture, vec2(mod(centers[i] + uTime * 0.05, 1.0), 0.5)).r;
         a = 0.5 + noise * 0.3; // Increased for more coverage
-        b = noise * mix(3.5, 2.5, uInputVolume); // Increased height for fuller appearance
+        b = max(0.4, noise * mix(3.5, 2.5, uInputVolume)); // Keep lobes from collapsing into center seams
         bool reverseGradient = (i % 2 == 1); // Reverse gradient for every second oval
 
         // Calculate the distance in polar coordinates

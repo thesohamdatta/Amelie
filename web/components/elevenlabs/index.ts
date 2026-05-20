@@ -23,3 +23,7 @@ export { Waveform } from "./waveform"
 export { Message, MessageContent, MessageAvatar } from "./message"
 export { ShimmeringText } from "./shimmering-text"
 export { BarVisualizer } from "./bar-visualizer"
+export {
+  getConversationBarPresentation,
+  getMessagePresentation,
+} from "./presentation"

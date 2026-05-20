@@ -157,11 +157,28 @@ Past Session Highlights: {past_summaries}
 </MEMORY>
 """
 
-def summarise_and_persist(session_id: str, full_transcript: str):
+async def summarise_and_persist(session_id: str, full_transcript: str):
     """
-    Save session transcript summary to SQLite. 
-    In production, this would call the LLM to generate a real summary.
+    Generate a session summary using LLM and save to SQLite. 
+    Also triggers autonomous fact extraction.
     """
-    summary = f"Session {session_id[:8]}: {full_transcript[:100]}..."
-    sqlite.save_session_summary(session_id, summary)
-    logger.info(f"[Memory] Persisted summary for {session_id}")
+    from backend.services import llm  # lazy import
+    
+    # 1. Trigger fact extraction (background-ish, but awaited here for reliability)
+    await extract_and_store_facts(full_transcript)
+    
+    # 2. Generate summary
+    prompt = f"""Summarize the following conversation in ONE concise sentence. Focus on the user's main topics or mood.
+    
+Transcript:
+{full_transcript}
+"""
+    try:
+        summary = await llm.get_raw_response([{"role": "user", "content": prompt}])
+        if not summary:
+            summary = f"Session {session_id[:8]}: {full_transcript[:50]}..."
+            
+        sqlite.save_session_summary(session_id, summary)
+        logger.info(f"[Memory] Persisted summary for {session_id}")
+    except Exception as e:
+        logger.error(f"[Memory] Summarization error: {e}")

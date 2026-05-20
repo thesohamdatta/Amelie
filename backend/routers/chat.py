@@ -28,13 +28,26 @@ _SENTENCE_END = {".", "!", "?", "\n"}
 # Chunk size for streaming audio bytes over WebSocket
 _AUDIO_CHUNK = 8192
 
-# In-memory store for active session buffers
-# In production, use Redis or a proper session manager
+# In-memory store for active session buffers and tasks
 _session_buffers = {}
+_active_tasks: dict[str, asyncio.Task] = {}
 
 import time
 
-# ...
+
+async def _cancel_active_task(session_id: str) -> None:
+    """Cancel any ongoing processing for this session."""
+    if session_id in _active_tasks:
+        task = _active_tasks[session_id]
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            logger.info(f"[Barge-in] Cancelled active task for {session_id}")
+        del _active_tasks[session_id]
+
 
 async def _send(ws: WebSocket, payload: dict) -> None:
     """Helper — send JSON message with timestamp."""
@@ -92,7 +105,7 @@ async def _handle_audio(ws: WebSocket, audio_b64: str, session_id: str, soul) ->
 
     # LLM streaming + sentence-chunked TTS worker
     history = mem_service.get_history(session_id)
-    memory_block = mem_service.build_memory_block(session_id)
+    memory_block = await mem_service.build_memory_block(session_id, query=transcript)
 
     full_response = ""
     sentence_buf = ""
@@ -156,14 +169,15 @@ async def _handle_audio_chunk(ws: WebSocket, audio_b64: str, session_id: str, so
                 sess["bytes"] = b""
                 sess["is_speaking"] = False
                 sess["silence_chunks"] = 0
-                await _handle_audio(ws, base64.b64encode(full_audio).decode(), session_id, soul)
+                task = asyncio.create_task(_handle_audio(ws, base64.b64encode(full_audio).decode(), session_id, soul))
+                _active_tasks[session_id] = task
 
 
 async def _handle_text(ws: WebSocket, text: str, session_id: str, soul) -> None:
     """Text-mode pipeline: text → LLM → TTS."""
     mem_service.add_message(session_id, "user", text)
     history = mem_service.get_history(session_id)
-    memory_block = mem_service.build_memory_block(session_id)
+    memory_block = await mem_service.build_memory_block(session_id, query=text)
 
     full_response = ""
     sentence_buf = ""
@@ -223,14 +237,25 @@ async def websocket_chat(websocket: WebSocket) -> None:
             msg_type = msg.get("type", "")
 
             if msg_type == "audio_chunk":
+                # If user starts speaking while assistant is speaking, interrupt!
+                if is_speech(base64.b64decode(msg["data"])):
+                    await _cancel_active_task(session_id)
                 await _handle_audio_chunk(websocket, msg["data"], session_id, soul)
+
+            elif msg_type == "interrupt":
+                await _cancel_active_task(session_id)
+                await _send(websocket, {"type": "status", "state": "idle"})
 
             elif msg_type == "audio_data":
                 # Legacy full-clip support
-                await _handle_audio(websocket, msg["data"], session_id, soul)
+                await _cancel_active_task(session_id)
+                task = asyncio.create_task(_handle_audio(websocket, msg["data"], session_id, soul))
+                _active_tasks[session_id] = task
 
             elif msg_type == "text":
-                await _handle_text(websocket, msg["data"], session_id, soul)
+                await _cancel_active_task(session_id)
+                task = asyncio.create_task(_handle_text(websocket, msg["data"], session_id, soul))
+                _active_tasks[session_id] = task
 
             elif msg_type == "ping":
                 await _send(websocket, {"type": "pong"})
@@ -241,7 +266,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
         history = mem_service.get_history(session_id)
         if history:
             transcript = " ".join(m["content"] for m in history)
-            mem_service.summarise_and_persist(session_id, transcript)
+            await mem_service.summarise_and_persist(session_id, transcript)
         mem_service.clear_session(session_id)
         if session_id in _session_buffers:
             del _session_buffers[session_id]
@@ -250,7 +275,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
         history = mem_service.get_history(session_id)
         if history:
             transcript = " ".join(m["content"] for m in history)
-            mem_service.summarise_and_persist(session_id, transcript)
+            await mem_service.summarise_and_persist(session_id, transcript)
         mem_service.clear_session(session_id)
         if session_id in _session_buffers:
             del _session_buffers[session_id]
