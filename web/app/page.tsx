@@ -161,24 +161,35 @@ export default function AmelieHome() {
                 layout
                 initial={false}
                 animate={{
-                  scale: isCallActive ? 1.05 : 1,
-                  width: isCallActive ? 288 : 224, // size-72 : size-56
+                  width: isCallActive ? 288 : 224,
                   height: isCallActive ? 288 : 224,
                 }}
                 transition={{
-                  layout: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-                  scale: { duration: 8, repeat: Infinity, ease: "easeInOut" }
+                  duration: 0.8,
+                  ease: [0.22, 1, 0.36, 1],
                 }}
                 className="relative"
               >
-                <Orb
-                  className="h-full w-full"
-                  colors={orbColors}
-                  agentState={orbState}
-                  volumeMode="manual"
-                  getInputVolume={getInputVolume}
-                  getOutputVolume={getOutputVolume}
-                />
+                <motion.div
+                  animate={{
+                    scale: isCallActive ? [1, 1.03, 1] : 1,
+                  }}
+                  transition={{
+                    scale: isCallActive 
+                      ? { duration: 5, repeat: Infinity, ease: "easeInOut" }
+                      : { duration: 0.8 }
+                  }}
+                  className="size-full"
+                >
+                  <Orb
+                    className="h-full w-full"
+                    colors={orbColors}
+                    agentState={orbState}
+                    volumeMode="manual"
+                    getInputVolume={getInputVolume}
+                    getOutputVolume={getOutputVolume}
+                  />
+                </motion.div>
               </motion.div>
 
               <motion.div
