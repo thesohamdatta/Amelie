@@ -21,8 +21,6 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ui/conversation"
-import { Message, MessageContent } from "@/components/ui/message"
-import { Response } from "@/components/ui/response"
 
 // ─── Map Amélie agent states → Orb's expected AgentState type ───────────────
 function toOrbState(
@@ -40,17 +38,17 @@ function toOrbState(
   }
 }
 
-// ─── Map emotion → Soul Orb color pair ──────────────────────────────────────
+// ─── Map emotion → Soul Orb color pair (ElevenLabs Editorial Palette) ────────
 function toOrbColors(emotion: string | null): [string, string] {
   switch (emotion) {
     case "joy":
-      return ["#FDBA74", "#FFEDD5"] // Amber/Peach
+      return ["#f4c5a8", "#e8b8c4"] // Peach / Rose
     case "thoughtful":
-      return ["#7C3AED", "#991B1B"] // Violet/Crimson
+      return ["#c8b8e0", "#a8c8e8"] // Lavender / Sky
     case "curious":
-      return ["#818CF8", "#4ADE80"] // Indigo/Green
+      return ["#a7e5d3", "#a8c8e8"] // Mint / Sky
     default:
-      return ["#FDBA74", "#FFEDD5"] // Default Amber
+      return ["#f4c5a8", "#c8b8e0"] // Default Peach / Lavender
   }
 }
 
@@ -175,7 +173,7 @@ export default function AmelieHome() {
   const getInputVolume = useCallback(() => {
     if (isMicMuted || !inputAnalyserRef.current || !inputDataArrayRef.current)
       return 0
-    inputAnalyserRef.current.getByteFrequencyData(inputDataArrayRef.current)
+    inputAnalyserRef.current.getByteFrequencyData(inputDataArrayRef.current as any)
     let sum = 0
     for (let i = 0; i < inputDataArrayRef.current.length; i++) {
       sum += inputDataArrayRef.current[i]
@@ -200,104 +198,50 @@ export default function AmelieHome() {
   })()
 
   return (
-    <main className="relative flex h-screen w-full flex-col bg-canvas text-ink overflow-hidden font-sans selection:bg-white/10">
-      {/* ── Atmospheric Ambient Orbs ────────────────────────────────────── */}
+    <main className="relative flex h-screen w-full flex-col bg-canvas text-ink overflow-hidden font-sans selection:bg-black/10">
+      {/* ── Atmospheric Ambient Orbs (Pastel Blooms) ────────────────────── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <motion.div
-          animate={{
-            x: [0, 20, -20, 0],
-            y: [0, -30, 30, 0],
-            scale: [1, 1.1, 0.9, 1],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-1/4 -left-1/4 w-[60vw] h-[60vw] rounded-full opacity-30"
-          style={{
-            background:
-              "radial-gradient(circle, var(--color-glow-amber), transparent 70%)",
-          }}
+        <div
+          className="absolute -top-[20%] -left-[10%] w-[80vw] h-[80vw] rounded-full blur-[120px] animate-glow-1"
+          style={{ background: "var(--color-glow-mint)" }}
         />
-        <motion.div
-          animate={{
-            x: [0, -40, 40, 0],
-            y: [0, 20, -20, 0],
-            scale: [1, 0.9, 1.1, 1],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear",
-            delay: 2,
-          }}
-          className="absolute -bottom-1/4 -right-1/4 w-[70vw] h-[70vw] rounded-full opacity-20"
-          style={{
-            background:
-              "radial-gradient(circle, var(--color-glow-violet), transparent 70%)",
-          }}
+        <div
+          className="absolute -bottom-[20%] -right-[10%] w-[90vw] h-[90vw] rounded-full blur-[140px] animate-glow-2"
+          style={{ background: "var(--color-glow-lavender)" }}
         />
       </div>
 
-      {/* ── Floating Header ─────────────────────────────────────────────── */}
+      {/* ── Floating Editorial Header ────────────────────────────────────── */}
       <header className="absolute top-0 left-0 right-0 p-8 flex justify-between items-start z-50 pointer-events-none">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 pointer-events-auto"
         >
-          <div className="flex flex-col">
-            <h1 className="font-display text-2xl font-light tracking-tight leading-none text-ink">
-              Amélie
-            </h1>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-body opacity-40 mt-1">
-              Sentient Object v0.1
-            </span>
-          </div>
+          <h1 className="font-display text-2xl font-light tracking-tight leading-none text-ink">
+            Amélie
+          </h1>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-4 pointer-events-auto"
-        >
-          {errorMessage ? (
-            <span className="text-[10px] font-mono uppercase text-red-400 bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20">
-              {errorMessage}
-            </span>
-          ) : (
-            <div className="flex items-center gap-2 bg-white/[0.03] backdrop-blur-md px-3 py-1.5 rounded-full border border-white/[0.05]">
-              <div
-                className={cn(
-                  "size-1.5 rounded-full",
-                  backendOnline === true
-                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-status-pulse"
-                    : backendOnline === false
-                    ? "bg-red-500"
-                    : "bg-zinc-600"
-                )}
-              />
-              <span className="text-[10px] font-mono uppercase tracking-widest text-body-strong opacity-60">
-                {statusLabel}
-              </span>
-            </div>
-          )}
-        </motion.div>
+
       </header>
 
       {/* ── Core Interface ─────────────────────────────────────────────── */}
       <div className="relative flex-1 w-full max-w-2xl mx-auto z-10">
         <AnimatePresence mode="wait">
           {messages.length === 0 ? (
-            /* ── Initial Presence — Cinematic Orb ────────────────────── */
+            /* ── Initial Presence — Editorial Hero ───────────────────── */
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
+              exit={{ opacity: 0, scale: 0.95, filter: "blur(20px)" }}
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 flex flex-col items-center justify-center"
             >
               <motion.div
                 animate={{
-                  scale: isCallActive ? [1, 1.05, 1] : [0.95, 1, 0.95],
+                  scale: isCallActive ? [1, 1.05, 1] : [0.98, 1, 0.98],
                 }}
                 transition={{
                   duration: 8,
@@ -306,7 +250,7 @@ export default function AmelieHome() {
                 }}
                 className={cn(
                   "relative transition-all duration-1000 ease-in-out",
-                  isCallActive ? "size-64" : "size-48"
+                  isCallActive ? "size-72" : "size-56"
                 )}
               >
                 <Orb
@@ -320,15 +264,15 @@ export default function AmelieHome() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 1 }}
-                className="mt-12 text-center"
+                className="mt-16 text-center"
               >
-                <h2 className="font-display text-3xl font-light text-ink/80 tracking-tight italic">
-                  {isCallActive ? "I'm listening." : "Quietly Waiting."}
+                <h2 className="font-display text-[64px] font-normal text-ink tracking-tight leading-none">
+                  {isCallActive ? "I'm listening." : "Quietly waiting."}
                 </h2>
-                <p className="mt-3 text-xs font-sans text-body/40 tracking-widest uppercase">
+                <p className="mt-6 text-[10px] font-sans text-body/40 tracking-[0.25em] uppercase font-medium">
                   {isCallActive
                     ? "Speak naturally"
                     : "Press the phone to begin"}
@@ -345,12 +289,12 @@ export default function AmelieHome() {
               className="absolute inset-0 flex flex-col"
             >
               <Conversation className="flex-1 px-6 pt-32 pb-40">
-                <ConversationContent className="flex flex-col gap-6">
+                <ConversationContent className="flex flex-col gap-8">
                   {messages.map((msg, i) => (
                     <motion.div
                       key={i}
-                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
                       className={cn(
                         "flex w-full",
@@ -359,25 +303,18 @@ export default function AmelieHome() {
                     >
                       <div
                         className={cn(
-                          "flex max-w-[85%] items-end gap-3",
-                          msg.role === "user" ? "flex-row-reverse" : "flex-row"
+                          "flex max-w-[80%] flex-col",
+                          msg.role === "user" ? "items-end" : "items-start"
                         )}
                       >
-                        {msg.role === "assistant" && (
-                          <div className="size-6 rounded-full border border-hairline overflow-hidden shrink-0 mb-1">
-                            <Orb
-                              className="size-full"
-                              colors={orbColors}
-                              agentState={i === messages.length - 1 ? orbState : null}
-                              volumeMode="auto"
-                            />
-                          </div>
-                        )}
+                         <span className="text-[10px] uppercase tracking-widest text-muted-text opacity-40 mb-2 px-1">
+                          {msg.role === "user" ? "You" : "Amélie"}
+                        </span>
                         <div
                           className={cn(
-                            "px-5 py-3 rounded-[1.5rem] text-sm leading-relaxed",
+                            "px-6 py-4 rounded-3xl text-[16px] leading-[1.6] tracking-[0.01em]",
                             msg.role === "user"
-                              ? "bg-white/[0.05] text-ink border border-white/[0.08]"
+                              ? "bg-white text-ink border border-hairline shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
                               : "text-body-strong font-light"
                           )}
                         >
@@ -387,20 +324,20 @@ export default function AmelieHome() {
                     </motion.div>
                   ))}
                 </ConversationContent>
-                <ConversationScrollButton className="bottom-32 bg-white/5 border-white/10 hover:bg-white/10 text-ink" />
+                <ConversationScrollButton className="bottom-32 bg-white border border-hairline hover:bg-canvas-soft text-ink shadow-sm" />
               </Conversation>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* ── Floating Control Island ─────────────────────────────────────── */}
-      <div className="absolute bottom-8 w-full flex justify-center z-50 px-6">
+      {/* ── Floating Controls (Editorial Pill) ────────────────────────── */}
+      <div className="absolute bottom-10 w-full flex justify-center z-50 px-6">
         <motion.div
           layout
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="glass-bar w-full max-w-lg rounded-[2.5rem] p-2 flex flex-col gap-2"
+          className="glass-bar w-full max-w-lg rounded-pill p-1.5 flex flex-col gap-1.5 shadow-xl shadow-black/5"
         >
           <AnimatePresence>
             {isTextMode && (
@@ -409,7 +346,7 @@ export default function AmelieHome() {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 onSubmit={handleTextSubmit}
-                className="px-2 pt-2 pb-1 relative"
+                className="px-2 pt-2 relative"
               >
                 <input
                   ref={textInputRef}
@@ -417,14 +354,14 @@ export default function AmelieHome() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Message Amélie…"
-                  className="w-full bg-white/[0.03] border border-white/[0.06] rounded-full pl-5 pr-14 py-4 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-white/10 placeholder:text-body/30"
+                  className="w-full bg-white/50 border border-hairline rounded-pill pl-6 pr-14 py-4 text-[16px] text-ink focus:outline-none focus:ring-1 focus:ring-black/5 placeholder:text-body/30"
                   autoFocus
                 />
                 <Button
                   size="icon"
                   type="submit"
                   disabled={!inputText.trim()}
-                  className="absolute right-3.5 top-3.5 h-10 w-10 bg-white/10 text-ink hover:bg-white/20 rounded-full transition-all disabled:opacity-20"
+                  className="absolute right-3.5 top-3.5 h-10 w-10 bg-primary-brand text-on-primary hover:bg-primary-active rounded-full transition-all disabled:opacity-20"
                 >
                   <ArrowUpIcon className="size-4" />
                 </Button>
@@ -432,26 +369,26 @@ export default function AmelieHome() {
             )}
           </AnimatePresence>
 
-          <div className="flex items-center justify-between px-3 h-16">
-            <div className="flex-1 flex items-center justify-start pl-4">
+          <div className="flex items-center justify-between px-2 h-[64px]">
+            <div className="flex-1 flex items-center justify-start pl-6">
               {isCallActive ? (
-                <div className="w-24 h-6 opacity-40">
+                <div className="w-24 h-6 opacity-60">
                   <LiveWaveform
                     active={!isMicMuted && agentState === "listening"}
                     barWidth={1.5}
                     barGap={1.5}
-                    height={20}
+                    height={16}
                     className="text-ink"
                   />
                 </div>
               ) : (
-                <span className="font-display italic text-sm text-body/40">
-                  Offline
+                <span className="font-display italic text-sm text-muted-text opacity-40">
+                  Ready to talk
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 pr-1">
               <Button
                 variant="ghost"
                 size="icon"
@@ -461,7 +398,7 @@ export default function AmelieHome() {
                 }}
                 className={cn(
                   "size-12 rounded-full transition-all duration-300",
-                  isTextMode ? "bg-white/10 text-ink scale-110" : "text-body/60 hover:text-ink hover:bg-white/5"
+                  isTextMode ? "bg-black/5 text-ink scale-105" : "text-body/40 hover:text-ink hover:bg-black/5"
                 )}
               >
                 <KeyboardIcon className="size-5" />
@@ -474,7 +411,7 @@ export default function AmelieHome() {
                   onClick={toggleMic}
                   className={cn(
                     "size-12 rounded-full transition-all duration-300",
-                    isMicMuted ? "bg-red-500/10 text-red-400" : "text-body/60 hover:text-ink hover:bg-white/5"
+                    isMicMuted ? "bg-destructive/5 text-destructive" : "text-body/40 hover:text-ink hover:bg-black/5"
                   )}
                 >
                   {isMicMuted ? <MicOffIcon className="size-5" /> : <MicIcon className="size-5" />}
@@ -487,8 +424,8 @@ export default function AmelieHome() {
                 className={cn(
                   "size-12 rounded-full transition-all duration-500",
                   isCallActive
-                    ? "bg-white/[0.08] text-ink hover:bg-white/[0.12] border border-white/[0.1]"
-                    : "bg-white text-canvas hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                    ? "bg-transparent border border-hairline-strong text-ink hover:bg-black/5"
+                    : "bg-primary-brand text-on-primary hover:bg-primary-active hover:scale-105 active:scale-95 shadow-lg shadow-black/10"
                 )}
               >
                 {isCallActive ? <PhoneOffIcon className="size-5" /> : <PhoneIcon className="size-5" />}

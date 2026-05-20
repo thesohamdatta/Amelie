@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
 export type ChatMessage = {
   role: "user" | "assistant"
-  content: str
+  content: string
 }
 
 export type AgentState = "idle" | "listening" | "thinking" | "speaking" | "connected" | "connecting" | "disconnected"

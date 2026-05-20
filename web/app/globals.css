@@ -42,44 +42,43 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* ─── Amélie Dark Obsidian Design System ─── */
-  /* DESIGN.md: "deep obsidian/charcoal (#080808)" */
-  --color-canvas: #080808;
-  --color-canvas-soft: #0e0e0e;
-  --color-canvas-raised: #141414;
-  --color-ink: #f0ede8;
-  --color-body: #a09b94;
-  --color-body-strong: #d4cfc8;
-  --color-muted-text: #5a5550;
+  /* ─── ElevenLabs Editorial Design System ─── */
+  /* DESIGN.md: "off-white (#f5f5f5) holding warm near-black ink (#292524)" */
+  --color-canvas: #f5f5f5;
+  --color-canvas-soft: #fafafa;
+  --color-ink: #0c0a09;
+  --color-body: #4e4e4e;
+  --color-body-strong: #292524;
+  --color-muted-text: #777169;
+  --color-muted-soft: #a8a29e;
 
   /* Brand / CTA */
-  --color-primary-brand: #f0ede8;
-  --color-primary-active: #ffffff;
+  --color-primary-brand: #292524;
+  --color-primary-active: #0c0a09;
+  --color-on-primary: #ffffff;
 
   /* Surface layers */
-  --color-surface-card: #111111;
-  --color-surface-strong: #1a1a1a;
-  --color-surface-elevated: #222222;
-  --color-surface-glass: rgba(255, 255, 255, 0.04);
+  --color-surface-card: #ffffff;
+  --color-surface-strong: #f0efed;
+  --color-surface-dark: #0c0a09;
+  --color-surface-dark-elevated: #1c1917;
 
   /* Hairlines */
-  --color-hairline: rgba(255, 255, 255, 0.08);
-  --color-hairline-soft: rgba(255, 255, 255, 0.04);
-  --color-hairline-strong: rgba(255, 255, 255, 0.14);
+  --color-hairline: #e7e5e4;
+  --color-hairline-soft: #f0efed;
+  --color-hairline-strong: #d6d3d1;
 
-  /* Emotional palette — Soul Orb chromatic engine */
-  --color-warm-1: #FDBA74;   /* Amber — warm/friend mode */
-  --color-warm-2: #FFEDD5;   /* Peach */
-  --color-witty-1: #818CF8;  /* Electric indigo — witty/sarcastic */
-  --color-witty-2: #4ADE80;  /* Signal green */
-  --color-serious-1: #7C3AED; /* Deep violet — upset/serious */
-  --color-serious-2: #991B1B; /* Dim crimson */
-  --color-neutral-1: #60A5FA; /* Twilight frost — neutral English */
-  --color-neutral-2: #E2E8F0;
+  /* Atmospheric Gradient Stops (Signature ElevenLabs) */
+  --color-gradient-mint: #a7e5d3;
+  --color-gradient-peach: #f4c5a8;
+  --color-gradient-lavender: #c8b8e0;
+  --color-gradient-sky: #a8c8e8;
+  --color-gradient-rose: #e8b8c4;
 
-  /* Ambient atmospheric glows */
-  --color-glow-amber: rgba(253, 186, 116, 0.12);
-  --color-glow-violet: rgba(129, 140, 248, 0.10);
+  /* Ambient atmospheric glows (Pastel blooms) */
+  --color-glow-mint: rgba(167, 229, 211, 0.4);
+  --color-glow-peach: rgba(244, 197, 168, 0.4);
+  --color-glow-lavender: rgba(200, 184, 224, 0.4);
 
   --radius-pill: 9999px;
   --font-display: var(--font-eb-garamond);
@@ -93,26 +92,18 @@
   --popover: var(--color-surface-card);
   --popover-foreground: var(--color-ink);
   --primary: var(--color-primary-brand);
-  --primary-foreground: #080808;
+  --primary-foreground: var(--color-on-primary);
   --secondary: var(--color-surface-strong);
   --secondary-foreground: var(--color-ink);
   --muted: var(--color-surface-strong);
   --muted-foreground: var(--color-body);
   --accent: var(--color-surface-strong);
   --accent-foreground: var(--color-ink);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: #dc2626;
   --border: var(--color-hairline);
   --input: var(--color-hairline-strong);
-  --ring: rgba(255, 255, 255, 0.2);
+  --ring: rgba(0, 0, 0, 0.1);
   --radius: 0.625rem;
-  --sidebar: var(--color-canvas-soft);
-  --sidebar-foreground: var(--color-ink);
-  --sidebar-primary: var(--color-primary-brand);
-  --sidebar-primary-foreground: #080808;
-  --sidebar-accent: var(--color-surface-strong);
-  --sidebar-accent-foreground: var(--color-ink);
-  --sidebar-border: var(--color-hairline);
-  --sidebar-ring: rgba(255, 255, 255, 0.2);
 }
 
 @layer base {
@@ -130,14 +121,14 @@
   }
 }
 
-/* ─── Ambient atmospheric glow animations ─── */
+/* ─── Ambient atmospheric glow animations (Pastel Drift) ─── */
 @keyframes glow-drift-1 {
-  0%, 100% { transform: translate(0%, 0%) scale(1); opacity: 0.06; }
-  50% { transform: translate(3%, -4%) scale(1.08); opacity: 0.1; }
+  0%, 100% { transform: translate(0%, 0%) scale(1); opacity: 0.3; }
+  50% { transform: translate(10%, -15%) scale(1.2); opacity: 0.5; }
 }
 @keyframes glow-drift-2 {
-  0%, 100% { transform: translate(0%, 0%) scale(1); opacity: 0.05; }
-  50% { transform: translate(-4%, 3%) scale(1.1); opacity: 0.09; }
+  0%, 100% { transform: translate(0%, 0%) scale(1); opacity: 0.2; }
+  50% { transform: translate(-15%, 10%) scale(1.3); opacity: 0.4; }
 }
 @keyframes orb-breathe {
   0%, 100% { transform: scale(1); }
@@ -147,21 +138,16 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
-@keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
 
-.animate-glow-1 { animation: glow-drift-1 12s ease-in-out infinite; }
-.animate-glow-2 { animation: glow-drift-2 16s ease-in-out infinite; }
-.animate-orb-breathe { animation: orb-breathe 4s ease-in-out infinite; }
-.animate-status-pulse { animation: status-pulse 2s ease-in-out infinite; }
-.animate-cursor-blink { animation: cursor-blink 1s step-end infinite; }
+.animate-glow-1 { animation: glow-drift-1 25s ease-in-out infinite; }
+.animate-glow-2 { animation: glow-drift-2 30s ease-in-out infinite; }
+.animate-orb-breathe { animation: orb-breathe 8s ease-in-out infinite; }
+.animate-status-pulse { animation: status-pulse 3s ease-in-out infinite; }
 
-/* Glassmorphism bar */
+/* Editorial Glassmorphism (Soft, Light) */
 .glass-bar {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  border: 1px solid var(--color-hairline);
 }

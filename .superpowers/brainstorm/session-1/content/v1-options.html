@@ -1,0 +1,54 @@
+<h2>Amélie Frontend: Next Phase</h2>
+<p class="subtitle">We've established the foundation. How should we proceed?</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="refactor" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Component Extraction (Refactor)</h3>
+      <p>Clean up <code>page.tsx</code> by moving the Orb, Floating Island, and Conversation components into <code>components/amelie/</code>. Essential for long-term health.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="memory" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Memory & Identity Pillar</h3>
+      <p>Implement the "Recall" UI. Let Amélie show you what she remembers. Connect to the vector database and show 'Shared Moments'.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="soul" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>The Soul Editor</h3>
+      <p>Create a settings panel to adjust Amélie's personality, voice (Meera, Pavithra, etc.), and language (Hinglish/Hindi/English) dynamically.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="e2e" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Live Loop Verification</h3>
+      <p>Focus on testing the full voice-to-voice loop with real API keys to ensure the "Sentient" feel is perfect before adding more UI.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Current UI Snapshot</h3>
+  <div class="mockup">
+    <div class="mockup-header">Amélie Home (Active Implementation)</div>
+    <div class="mockup-body" style="background: #0c0a09; color: white; padding: 40px; text-align: center; height: 300px; display: flex; flex-col; items-center; justify-content: center;">
+      <div style="width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, #FDBA74, #FFEDD5); margin-bottom: 20px; box-shadow: 0 0 40px rgba(253, 186, 116, 0.4);"></div>
+      <h1 style="font-family: serif; font-size: 2rem; font-style: italic;">"I'm listening."</h1>
+      <p style="opacity: 0.4; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">Speak naturally</p>
+      
+      <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; height: 50px; background: rgba(255,255,255,0.05); border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-around;">
+         <span style="opacity: 0.5;">⌨️</span>
+         <span style="opacity: 0.5;">🎙️</span>
+         <span style="color: white; font-weight: bold;">📞</span>
+      </div>
+    </div>
+  </div>
+</div>

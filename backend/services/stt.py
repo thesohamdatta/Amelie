@@ -4,6 +4,7 @@ Routes to Sarvam Saaras v3 (Hinglish/Hindi) or Whisper (English).
 """
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import os
