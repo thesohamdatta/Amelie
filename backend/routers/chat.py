@@ -20,6 +20,8 @@ from backend.services import tts as tts_service
 from backend.services.vad import is_speech
 from backend.soul import load_soul
 
+from backend.services.orchestrator import VoiceOrchestrator
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -28,25 +30,11 @@ _SENTENCE_END = {".", "!", "?", "\n"}
 # Chunk size for streaming audio bytes over WebSocket
 _AUDIO_CHUNK = 8192
 
-# In-memory store for active session buffers and tasks
+# Global orchestrator for response lifecycle (Barge-in, task tracking)
+orchestrator = VoiceOrchestrator()
+
+# In-memory store for active session audio buffers
 _session_buffers = {}
-_active_tasks: dict[str, asyncio.Task] = {}
-
-import time
-
-
-async def _cancel_active_task(session_id: str) -> None:
-    """Cancel any ongoing processing for this session."""
-    if session_id in _active_tasks:
-        task = _active_tasks[session_id]
-        if not task.done():
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
-            logger.info(f"[Barge-in] Cancelled active task for {session_id}")
-        del _active_tasks[session_id]
 
 
 async def _send(ws: WebSocket, payload: dict) -> None:
@@ -169,8 +157,7 @@ async def _handle_audio_chunk(ws: WebSocket, audio_b64: str, session_id: str, so
                 sess["bytes"] = b""
                 sess["is_speaking"] = False
                 sess["silence_chunks"] = 0
-                task = asyncio.create_task(_handle_audio(ws, base64.b64encode(full_audio).decode(), session_id, soul))
-                _active_tasks[session_id] = task
+                orchestrator.start_response(session_id, _handle_audio(ws, base64.b64encode(full_audio).decode(), session_id, soul))
 
 
 async def _handle_text(ws: WebSocket, text: str, session_id: str, soul) -> None:
@@ -239,23 +226,18 @@ async def websocket_chat(websocket: WebSocket) -> None:
             if msg_type == "audio_chunk":
                 # If user starts speaking while assistant is speaking, interrupt!
                 if is_speech(base64.b64decode(msg["data"])):
-                    await _cancel_active_task(session_id)
+                    await orchestrator.cancel_response(session_id)
                 await _handle_audio_chunk(websocket, msg["data"], session_id, soul)
 
             elif msg_type == "interrupt":
-                await _cancel_active_task(session_id)
+                await orchestrator.cancel_response(session_id)
                 await _send(websocket, {"type": "status", "state": "idle"})
 
             elif msg_type == "audio_data":
-                # Legacy full-clip support
-                await _cancel_active_task(session_id)
-                task = asyncio.create_task(_handle_audio(websocket, msg["data"], session_id, soul))
-                _active_tasks[session_id] = task
+                orchestrator.start_response(session_id, _handle_audio(websocket, msg["data"], session_id, soul))
 
             elif msg_type == "text":
-                await _cancel_active_task(session_id)
-                task = asyncio.create_task(_handle_text(websocket, msg["data"], session_id, soul))
-                _active_tasks[session_id] = task
+                orchestrator.start_response(session_id, _handle_text(websocket, msg["data"], session_id, soul))
 
             elif msg_type == "ping":
                 await _send(websocket, {"type": "pong"})
