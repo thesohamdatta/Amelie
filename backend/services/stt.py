@@ -21,9 +21,12 @@ def _transcribe_sarvam(audio_bytes: bytes, language_code: str) -> str:
     """Synchronous Sarvam Saaras v3 transcription — run in thread."""
     client = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY", ""))
     
-    # Ensure we send a proper WAV file with headers
+    # ENFORCED: WAV format and 16kHz sample rate (Mandated by voice-agents skill)
     try:
         audio = AudioSegment.from_file(io.BytesIO(audio_bytes))
+        # Ensure 16kHz mono for best STT performance
+        audio = audio.set_frame_rate(16000).set_channels(1)
+        
         wav_io = io.BytesIO()
         audio.export(wav_io, format="wav")
         wav_io.seek(0)

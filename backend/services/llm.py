@@ -79,6 +79,86 @@ def _needs_search(text: str) -> bool:
     return any(trigger in lowered for trigger in _SEARCH_TRIGGERS)
 
 
+async def _stream_groq(messages: List[dict], soul: Soul, context: str) -> AsyncGenerator[str, None]:
+    """Stream response from Groq."""
+    from groq import AsyncGroq
+    client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY", ""))
+    model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+    system_prompt = _build_system_prompt(soul, context)
+
+    try:
+        stream = await client.chat.completions.create(
+            model=model,
+            messages=[{"role": "system", "content": system_prompt}] + messages,
+            stream=True,
+            max_tokens=500,
+            temperature=0.85,
+        )
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield delta
+    except Exception as exc:
+        logger.error(f"[LLM] Groq error: {exc}")
+        yield "Give me a sec..."
+
+
+async def _stream_openai(messages: List[dict], soul: Soul, context: str) -> AsyncGenerator[str, None]:
+    """Stream response from OpenAI."""
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY", ""))
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    system_prompt = _build_system_prompt(soul, context)
+
+    try:
+        stream = await client.chat.completions.create(
+            model=model,
+            messages=[{"role": "system", "content": system_prompt}] + messages,
+            stream=True,
+            max_tokens=500,
+            temperature=0.85,
+        )
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield delta
+    except Exception as exc:
+        logger.error(f"[LLM] OpenAI error: {exc}")
+        yield "Give me a sec..."
+
+
+async def _stream_gemini(messages: List[dict], soul: Soul, context: str) -> AsyncGenerator[str, None]:
+    """Stream response from Gemini."""
+    import google.generativeai as genai
+    from google.generativeai.types import ContentDict
+    
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
+    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    system_prompt = _build_system_prompt(soul, context)
+    
+    try:
+        model = genai.GenerativeModel(
+            model_name=model_name,
+            system_instruction=system_prompt
+        )
+        
+        # Convert messages to Gemini format
+        chat_history: List[ContentDict] = []
+        for m in messages[:-1]:
+            role = "user" if m["role"] == "user" else "model"
+            chat_history.append({"role": role, "parts": [m["content"]]})
+        
+        chat = model.start_chat(history=chat_history)
+        response = await chat.send_message_async(messages[-1]["content"], stream=True)
+        
+        async for chunk in response:
+            if chunk.text:
+                yield chunk.text
+    except Exception as exc:
+        logger.error(f"[LLM] Gemini error: {exc}")
+        yield "Give me a sec..."
+
+
 async def stream_response(
     messages: List[dict],
     soul: Soul,
@@ -107,27 +187,17 @@ async def stream_response(
             except Exception as exc:
                 logger.warning(f"[LLM] Search failed, proceeding without: {exc}")
 
+    context = memory_block + search_context
+
     if provider == "groq":
-        client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY", ""))
-        model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-
-        system_prompt = _build_system_prompt(soul, memory_block + search_context)
-
-        try:
-            stream = await client.chat.completions.create(
-                model=model,
-                messages=[{"role": "system", "content": system_prompt}] + messages,
-                stream=True,
-                max_tokens=500,
-                temperature=0.85,
-            )
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content
-                if delta:
-                    yield delta
-        except Exception as exc:
-            logger.error(f"[LLM] Groq error: {exc}")
-            yield "Give me a sec..."
+        async for token in _stream_groq(messages, soul, context):
+            yield token
+    elif provider == "openai":
+        async for token in _stream_openai(messages, soul, context):
+            yield token
+    elif provider == "gemini":
+        async for token in _stream_gemini(messages, soul, context):
+            yield token
     else:
         logger.warning(f"[LLM] Unknown provider: {provider}")
         yield "I'm having trouble connecting right now."

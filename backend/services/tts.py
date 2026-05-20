@@ -28,19 +28,20 @@ def _synthesize_sarvam(text: str, soul: Soul) -> bytes:
 
     chunks: list[bytes] = []
     try:
+        # Bulbul v3: binary stream returns raw audio chunks
         for chunk in client.text_to_speech.convert_stream(
             text=text,
             target_language_code=soul.language_code,
             speaker=soul.sarvam_speaker,
             model="bulbul:v3",
             pace=soul.pace_value,
-            # DO NOT pass pitch or loudness — returns 400 on v3
+            # CRITICAL: DO NOT pass pitch or loudness — returns 400 on v3 as per skill
         ):
             if chunk:
                 chunks.append(chunk)
 
         audio = b"".join(chunks)
-        logger.info(f"[TTS] Sarvam synthesized {len(audio)} bytes for {len(text)} chars")
+        logger.info(f"[TTS] Sarvam Bulbul v3 synthesized {len(audio)} bytes for {len(text)} chars")
         return audio
     except Exception as exc:
         logger.error(f"[TTS] Sarvam Bulbul error: {exc}")
