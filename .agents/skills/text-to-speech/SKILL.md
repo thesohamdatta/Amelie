@@ -1,120 +1,226 @@
 ---
 name: text-to-speech
-description: Convert text to natural speech using Sarvam AI's Bulbul v3 model. Handles audio generation, voiceovers, and voice interfaces for 11 Indian languages with 30+ voices. Supports REST, HTTP streaming, WebSocket, and pronunciation dictionaries. Use when generating spoken audio from text.
-license: Apache-2.0
-metadata:
-  author: sarvam-ai
-  version: "3.0"
+description: Convert text to speech using ElevenLabs voice AI. Use when generating audio from text, creating voiceovers, building voice apps, or synthesizing speech in 70+ languages.
+license: MIT
+compatibility: Requires internet access and an ElevenLabs API key (ELEVENLABS_API_KEY).
+metadata: {"openclaw": {"requires": {"env": ["ELEVENLABS_API_KEY"]}, "primaryEnv": "ELEVENLABS_API_KEY"}}
 ---
 
-# Text-to-Speech — Bulbul
+# ElevenLabs Text-to-Speech
 
-> [!IMPORTANT]
-> Auth: `api-subscription-key` header — NOT `Authorization: Bearer`. Base URL: `https://api.sarvam.ai/v1`
+Generate natural speech from text - supports 70+ languages, multiple models for quality vs latency tradeoffs.
 
-## Model
+> **Setup:** See [Installation Guide](references/installation.md). For JavaScript, use `@elevenlabs/*` packages only.
 
-`bulbul:v3` — 11 languages, 30+ voices (default: `shubh`), REST/HTTP stream/WebSocket.
+## Quick Start
 
-## Quick Start (Python)
+### Python
 
 ```python
-from sarvamai import SarvamAI
-from sarvamai.play import save
+from elevenlabs import ElevenLabs
 
-client = SarvamAI()
+client = ElevenLabs()
 
-response = client.text_to_speech.convert(
-    text="नमस्ते, आप कैसे हैं?",
-    target_language_code="hi-IN",
-    model="bulbul:v3",
-    speaker="shubh"
+audio = client.text_to_speech.convert(
+    text="Hello, welcome to ElevenLabs!",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",  # George
+    model_id="eleven_multilingual_v2"
 )
-save(response, "output.wav")
 
-# HTTP Stream (lower latency, binary audio)
-chunks = []
-for chunk in client.text_to_speech.convert_stream(
-    text="Hello from Sarvam AI",
-    target_language_code="en-IN",
-    speaker="shubh",
-    model="bulbul:v3"
-):
-    chunks.append(chunk)
-audio = b"".join(chunks)
+with open("output.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
 ```
 
-## Quick Start (JavaScript/TypeScript)
+### JavaScript
 
-```typescript
-import { SarvamAIClient } from "sarvamai";
-import { writeFile } from "fs/promises";
+```javascript
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { createWriteStream } from "fs";
 
-const client = new SarvamAIClient({ apiSubscriptionKey: "YOUR_SARVAM_API_KEY" });
-
-// REST
-const response = await client.textToSpeech.convert({
-    text: "नमस्ते, आप कैसे हैं?",
-    target_language_code: "hi-IN",
-    model: "bulbul:v3",
-    speaker: "shubh"
+const client = new ElevenLabsClient();
+const audio = await client.textToSpeech.convert("JBFqnCBsd6RMkjVDRZzb", {
+  text: "Hello, welcome to ElevenLabs!",
+  modelId: "eleven_multilingual_v2",
 });
-
-// HTTP Stream (lower latency, returns BinaryResponse)
-const streamResponse = await client.textToSpeech.convertStream({
-    text: "Hello from Sarvam AI",
-    target_language_code: "en-IN",
-    speaker: "shubh",
-    model: "bulbul:v3"
-});
-const bytes = await streamResponse.bytes();
-await writeFile("output.wav", bytes);
+audio.pipe(createWriteStream("output.mp3"));
 ```
 
-## WebSocket Streaming
+### cURL
+
+```bash
+curl -X POST "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb" \
+  -H "xi-api-key: $ELEVENLABS_API_KEY" -H "Content-Type: application/json" \
+  -d '{"text": "Hello!", "model_id": "eleven_multilingual_v2"}' --output output.mp3
+```
+
+## Models
+
+| Model ID | Languages | Latency | Best For |
+|----------|-----------|---------|----------|
+| `eleven_v3` | 70+ | Standard | Highest quality, emotional range |
+| `eleven_multilingual_v2` | 29 | Standard | High quality, long-form content |
+| `eleven_flash_v2_5` | 32 | ~75ms | Ultra-low latency, real-time |
+| `eleven_flash_v2` | English | ~75ms | English-only, fastest |
+| `eleven_turbo_v2_5` | 32 | ~250-300ms | Balanced quality/speed |
+| `eleven_turbo_v2` | English | ~250-300ms | English-only, balanced |
+
+## Voice IDs
+
+Use pre-made voices or create custom voices in the dashboard.
+
+**Popular voices:**
+- `JBFqnCBsd6RMkjVDRZzb` - George (male, narrative)
+- `EXAVITQu4vr4xnSDxMaL` - Sarah (female, soft)
+- `onwK4e9ZLuTAKqWW03F9` - Daniel (male, authoritative)
+- `XB0fDUnXU5powFXDhCwa` - Charlotte (female, conversational)
 
 ```python
-import asyncio
-from sarvamai import AsyncSarvamAI
-
-async def tts_stream():
-    client = AsyncSarvamAI()
-    async with client.text_to_speech_streaming.connect(model="bulbul:v3") as ws:
-        await ws.configure(target_language_code="hi-IN", speaker="shubh")
-        await ws.convert("Your text here")
-        await ws.flush()
-        async for message in ws:
-            pass  # base64 audio chunks
-
-asyncio.run(tts_stream())
+voices = client.voices.get_all()
+for voice in voices.voices:
+    print(f"{voice.voice_id}: {voice.name}")
 ```
 
-## Character Limits
+## Voice Settings
 
-| Method | Max Text |
-|--------|----------|
-| **REST** (`convert`) | 2,500 chars |
-| **HTTP Stream** (`convert_stream`) | 3,500 chars |
-| **WebSocket** | 2,500 chars/msg |
+Fine-tune how the voice sounds:
 
-## Gotchas
+- **Stability**: How consistent the voice stays. Lower values = more emotional range and variation, but can sound unstable. Higher = steady, predictable delivery.
+- **Similarity boost**: How closely to match the original voice sample. Higher values sound more like the original but may amplify audio artifacts.
+- **Style**: Exaggerates the voice's unique style characteristics (only works with v2+ models).
+- **Speaker boost**: Post-processing that enhances clarity and voice similarity.
 
-| Gotcha | Detail |
-|--------|--------|
-| **JS method name** | `client.textToSpeech.convert({...})` and `.convertStream({...})` — camelCase. Stream returns `BinaryResponse` with `.stream()`, `.bytes()`, `.blob()`. |
-| **`pitch`/`loudness` rejected** | SDK accepts these but API returns 400 for v3. Only `pace` (0.5–2.0) works. |
-| **v2 voices incompatible** | `anushka`, `abhilash`, `arya`, etc. don't work with v3. Use `shubh` (default). |
-| **Sample rate >24kHz** | 32kHz, 44.1kHz, 48kHz only via REST, not streaming. |
-| **REST response** | Base64-encoded audio in `response.audios[0]`. Use `sarvamai.play.save()` or `base64.b64decode()`. |
-| **Pronunciation dictionary** | `dict_id` param teaches custom word pronunciations. Create via `client.pronunciation_dictionary.create(file=f)`. |
+```python
+from elevenlabs import VoiceSettings
 
-## Full Docs
+audio = client.text_to_speech.convert(
+    text="Customize my voice settings.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    voice_settings=VoiceSettings(
+        stability=0.5,
+        similarity_boost=0.75,
+        style=0.5,
+        speed=1.0,             # 0.25 to 4.0 (default 1.0)
+        use_speaker_boost=True
+    )
+)
+```
 
-Fetch voice catalog, streaming protocol, pronunciation dictionary CRUD, and codec options from:
+## Language Enforcement
 
-- **https://docs.sarvam.ai/llms.txt** — comprehensive docs index
-- [TTS Overview](https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/overview)
-- [Voice Catalog](https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/how-to/change-the-speaker-voice)
-- [HTTP Stream](https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/streaming-api/http-stream)
-- [Pronunciation Dictionary](https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/pronunciation-dictionary)
-- [Rate Limits](https://docs.sarvam.ai/api-reference-docs/ratelimits)
+Force specific language for pronunciation:
+
+```python
+audio = client.text_to_speech.convert(
+    text="Bonjour, comment allez-vous?",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",
+    language_code="fr"  # ISO 639-1 code
+)
+```
+
+## Text Normalization
+
+Controls how numbers, dates, and abbreviations are converted to spoken words. For example, "01/15/2026" becomes "January fifteenth, twenty twenty-six":
+
+- `"auto"` (default): Model decides based on context
+- `"on"`: Always normalize (use when you want natural speech)
+- `"off"`: Speak literally (use when you want "zero one slash one five...")
+
+```python
+audio = client.text_to_speech.convert(
+    text="Call 1-800-555-0123 on 01/15/2026",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    apply_text_normalization="on"
+)
+```
+
+## Request Stitching
+
+When generating long audio in multiple requests, the audio can have pops, unnatural pauses, or tone shifts at the boundaries. Request stitching solves this by letting each request know what comes before/after it:
+
+```python
+# First request
+audio1 = client.text_to_speech.convert(
+    text="This is the first part.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    next_text="And this continues the story."
+)
+
+# Second request using previous context
+audio2 = client.text_to_speech.convert(
+    text="And this continues the story.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    previous_text="This is the first part."
+)
+```
+
+## Output Formats
+
+| Format | Description |
+|--------|-------------|
+| `mp3_44100_128` | MP3 44.1kHz 128kbps (default) - compressed, good for web/apps |
+| `mp3_44100_192` | MP3 44.1kHz 192kbps (Creator+) - higher quality compressed |
+| `mp3_44100_64` | MP3 44.1kHz 64kbps - lower quality, smaller files |
+| `mp3_22050_32` | MP3 22.05kHz 32kbps - smallest MP3 files |
+| `pcm_16000` | Raw PCM 16kHz - use for real-time processing |
+| `pcm_22050` | Raw PCM 22.05kHz |
+| `pcm_24000` | Raw PCM 24kHz - good balance for streaming |
+| `pcm_44100` | Raw PCM 44.1kHz (Pro+) - CD quality |
+| `pcm_48000` | Raw PCM 48kHz (Pro+) - highest quality |
+| `ulaw_8000` | μ-law 8kHz - standard for phone systems (Twilio, telephony) |
+| `alaw_8000` | A-law 8kHz - telephony (alternative to μ-law) |
+| `opus_48000_64` | Opus 48kHz 64kbps - efficient streaming codec |
+| `wav_44100` | WAV 44.1kHz - uncompressed with headers |
+
+## Streaming
+
+For real-time applications, use the `stream` method (returns audio chunks as they're generated):
+
+```python
+audio_stream = client.text_to_speech.stream(
+    text="This text will be streamed as audio.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_flash_v2_5"  # Ultra-low latency
+)
+
+for chunk in audio_stream:
+    play_audio(chunk)
+```
+
+See [references/streaming.md](references/streaming.md) for WebSocket streaming.
+
+## Error Handling
+
+```python
+try:
+    audio = client.text_to_speech.convert(
+        text="Generate speech",
+        voice_id="invalid-voice-id"
+    )
+except Exception as e:
+    print(f"API error: {e}")
+```
+
+Common errors:
+- **401**: Invalid API key
+- **422**: Invalid parameters (check voice_id, model_id)
+- **429**: Rate limit exceeded
+
+## Tracking Costs
+
+Monitor character usage via response headers (`x-character-count`, `request-id`):
+
+```python
+response = client.text_to_speech.convert.with_raw_response(
+    text="Hello!", voice_id="JBFqnCBsd6RMkjVDRZzb", model_id="eleven_multilingual_v2"
+)
+audio = response.parse()
+print(f"Characters used: {response.headers.get('x-character-count')}")
+```
+
+## References
+
+- [Installation Guide](references/installation.md)
+- [Streaming Audio](references/streaming.md)
+- [Voice Settings](references/voice-settings.md)

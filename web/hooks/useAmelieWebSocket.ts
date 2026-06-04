@@ -10,12 +10,14 @@ export type AgentState = "idle" | "listening" | "thinking" | "speaking" | "conne
 interface UseAmelieWebSocketOptions {
   url: string
   onAudioChunk?: (base64: string) => void
+  onAlignment?: (alignment: any) => void
   onInterrupt?: () => void
 }
 
-export const useAmelieWebSocket = ({ url, onAudioChunk, onInterrupt }: UseAmelieWebSocketOptions) => {
+export const useAmelieWebSocket = ({ url, onAudioChunk, onAlignment, onInterrupt }: UseAmelieWebSocketOptions) => {
   const [agentState, setAgentState] = useState<AgentState>("disconnected")
   const [emotion, setEmotion] = useState<string | null>(null)
+  const [activeMemoryHits, setActiveMemoryHits] = useState<string[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [transcript, setTranscript] = useState("")
   
@@ -40,6 +42,8 @@ export const useAmelieWebSocket = ({ url, onAudioChunk, onInterrupt }: UseAmelie
           case "status":
             setAgentState(msg.state)
             if (msg.emotion) setEmotion(msg.emotion)
+            if (msg.memory_hit) setActiveMemoryHits(msg.memory_hit)
+            else if (msg.state !== "thinking") setActiveMemoryHits([])
             break
           case "transcript":
             setTranscript(msg.data)
@@ -66,6 +70,9 @@ export const useAmelieWebSocket = ({ url, onAudioChunk, onInterrupt }: UseAmelie
             break
           case "audio_chunk":
             if (onAudioChunk) onAudioChunk(msg.data)
+            break
+          case "alignment":
+            if (onAlignment) onAlignment(msg.data)
             break
           case "interrupt":
             if (onInterrupt) onInterrupt()
@@ -121,6 +128,7 @@ export const useAmelieWebSocket = ({ url, onAudioChunk, onInterrupt }: UseAmelie
   return { 
     agentState, 
     emotion, 
+    activeMemoryHits,
     messages, 
     sendText, 
     sendAudioChunk, 

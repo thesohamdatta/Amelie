@@ -2,7 +2,12 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import { useAmelieWebSocket } from "./useAmelieWebSocket"
 import { useAudioStreamer } from "./useAudioStreamer"
 
-export const useLiveLoop = (url: string) => {
+interface UseLiveLoopOptions {
+  url: string
+  onAlignment?: (alignment: any) => void
+}
+
+export const useLiveLoop = (url: string, onAlignment?: (alignment: any) => void) => {
   const {
     queueAudioChunk,
     stopPlayback,
@@ -13,6 +18,7 @@ export const useLiveLoop = (url: string) => {
   const {
     agentState,
     emotion,
+    activeMemoryHits,
     messages,
     sendText,
     sendAudioChunk,
@@ -22,6 +28,7 @@ export const useLiveLoop = (url: string) => {
   } = useAmelieWebSocket({
     url,
     onAudioChunk: queueAudioChunk,
+    onAlignment,
     onInterrupt: stopPlayback
   })
 
@@ -144,6 +151,7 @@ export const useLiveLoop = (url: string) => {
   return {
     agentState,
     emotion,
+    activeMemoryHits,
     messages,
     isMicMuted,
     backendOnline,
@@ -153,6 +161,7 @@ export const useLiveLoop = (url: string) => {
     sendText,
     getInputVolume,
     getOutputVolume,
+    ensureAudioContext,
     isCallActive: agentState !== "disconnected"
   }
 }

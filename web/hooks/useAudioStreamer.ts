@@ -13,6 +13,9 @@ export const useAudioStreamer = () => {
       analyserRef.current = audioContextRef.current.createAnalyser()
       analyserRef.current.connect(audioContextRef.current.destination)
     }
+    if (audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume()
+    }
     return audioContextRef.current
   }, [])
 
@@ -38,24 +41,38 @@ export const useAudioStreamer = () => {
   }, [])
 
   const queueAudioChunk = useCallback(async (base64Data: string) => {
-    const ctx = ensureAudioContext()
-    const binaryStr = window.atob(base64Data)
-    const bytes = new Uint8Array(binaryStr.length)
-    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+    ensureAudioContext()
     
-    try {
-      const audioBuffer = await ctx.decodeAudioData(bytes.buffer)
-      audioQueueRef.current.push(audioBuffer.getChannelData(0))
-      playNextInQueue()
-    } catch (e) {
-      console.warn("Audio decoding failed", e)
+    // Decode base64 to binary
+    const binaryStr = window.atob(base64Data)
+    const len = binaryStr.length
+    const bytes = new Uint8Array(len)
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryStr.charCodeAt(i)
     }
+
+    // ElevenLabs PCM16 format: 16-bit signed integers
+    // Each sample is 2 bytes
+    const int16Data = new Int16Array(bytes.buffer)
+    const float32Data = new Float32Array(int16Data.length)
+
+    // Normalize Int16 to Float32 [-1.0, 1.0]
+    for (let i = 0; i < int16Data.length; i++) {
+      float32Data[i] = int16Data[i] / 32768.0
+    }
+
+    audioQueueRef.current.push(float32Data)
+    playNextInQueue()
   }, [ensureAudioContext, playNextInQueue])
 
   const stopPlayback = useCallback(() => {
     audioQueueRef.current = []
     if (currentSourceRef.current) {
-      currentSourceRef.current.stop()
+      try {
+        currentSourceRef.current.stop()
+      } catch (e) {
+        // Source might already be stopped
+      }
       currentSourceRef.current = null
     }
     isPlayingRef.current = false
@@ -69,7 +86,8 @@ export const useAudioStreamer = () => {
     for (let i = 0; i < dataArray.length; i++) {
       sum += dataArray[i]
     }
-    return Math.min(1.0, (sum / dataArray.length) / 128)
+    // Boost the volume visualization slightly for better orb reactivity
+    return Math.min(1.0, (sum / dataArray.length) / 128 * 1.5)
   }, [])
 
   return {

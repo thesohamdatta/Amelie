@@ -28,6 +28,7 @@ else:
     # Logged after basicConfig below
 
 from backend.routers.chat import router as chat_router
+from backend.routers.config import router as config_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,6 +55,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(config_router)
 
 
 @app.get("/health")

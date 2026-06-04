@@ -19,8 +19,16 @@ personality: |
 language: "Hinglish"
 
 # TTS engine selection
-# Options: "kokoro" (English, local) | "sarvam_bulbul" (Indian languages, API)
-tts_voice: "sarvam_bulbul"
+# Options: "kokoro" (English, local) | "sarvam_bulbul" (Indian languages, API) | "elevenlabs"
+tts_voice: "elevenlabs"
+
+# ElevenLabs voice ID (used only when tts_voice = "elevenlabs")
+# Default: "21m00Tcm4TlvDq8ikWAM" (Rachel)
+elevenlabs_voice_id: "21m00Tcm4TlvDq8ikWAM"
+
+# ElevenLabs model ID (used only when tts_voice = "elevenlabs")
+# Default: "eleven_flash_v2_5" (Ultra low latency)
+elevenlabs_model_id: "eleven_flash_v2_5"
 
 # Sarvam Bulbul v3 speaker (used only when tts_voice = "sarvam_bulbul")
 # v3 voices: meera, pavithra, maitreyi, arvind, amol, amartya, shubh

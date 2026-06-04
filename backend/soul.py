@@ -20,6 +20,8 @@ class Soul:
     personality: str = "witty, warm, slightly sarcastic"
     language: str = "Hinglish"
     tts_voice: str = "sarvam_bulbul"
+    elevenlabs_voice_id: str = "Xb7hHahYTV7dWC5No688"
+    elevenlabs_model_id: str = "eleven_flash_v2_5"
     sarvam_speaker: str = "meera"
     stt_engine: str = "sarvam_saaras"
     memory_depth: str = "high"
@@ -42,6 +44,40 @@ class Soul:
         return self.language in ("Hinglish", "Hindi")
 
 
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "personality": self.personality,
+            "language": self.language,
+            "tts_voice": self.tts_voice,
+            "elevenlabs_voice_id": self.elevenlabs_voice_id,
+            "elevenlabs_model_id": self.elevenlabs_model_id,
+            "sarvam_speaker": self.sarvam_speaker,
+            "stt_engine": self.stt_engine,
+            "memory_depth": self.memory_depth,
+            "speaking_pace": self.speaking_pace,
+            "interests": self.interests,
+            "default_mode": self.default_mode,
+            "greeting_style": self.greeting_style,
+        }
+
+def save_soul(soul: Soul) -> None:
+    """Save Soul object back to soul.md as YAML."""
+    path = os.path.abspath(SOUL_PATH)
+    
+    # Header comments to keep it human-readable
+    header = """# soul.md — Amélie Personality Config
+# Edit this file to customise how Amélie talks and sounds.
+# Backend reads this at startup. Changes take effect on next session.
+# ─────────────────────────────────────────────────────────────────────
+"""
+    
+    data = soul.to_dict()
+    yaml_content = yaml.dump(data, sort_keys=False, allow_unicode=True)
+    
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(header + "\n" + yaml_content)
+
 def load_soul() -> Soul:
     """Parse soul.md YAML (skip comment lines starting with #)."""
     path = os.path.abspath(SOUL_PATH)
@@ -60,6 +96,8 @@ def load_soul() -> Soul:
         personality=data.get("personality", "witty, warm, slightly sarcastic"),
         language=data.get("language", "Hinglish"),
         tts_voice=data.get("tts_voice", "sarvam_bulbul"),
+        elevenlabs_voice_id=data.get("elevenlabs_voice_id", "Xb7hHahYTV7dWC5No688"),
+        elevenlabs_model_id=data.get("elevenlabs_model_id", "eleven_flash_v2_5"),
         sarvam_speaker=data.get("sarvam_speaker", "meera"),
         stt_engine=data.get("stt_engine", "sarvam_saaras"),
         memory_depth=data.get("memory_depth", "high"),

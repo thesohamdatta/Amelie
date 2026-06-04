@@ -123,9 +123,9 @@ def clear_session(session_id: str) -> None:
     else:
         _fallback_history.pop(session_id, None)
 
-async def build_memory_block(session_id: str, query: str = "") -> str:
+async def build_memory_block(session_id: str, query: str = "") -> tuple[str, list[str]]:
     """
-    Construct the context block for LLM.
+    Construct the context block for LLM and return hits for UI feedback.
     Includes persistent profile and relevant semantic memories.
     Uses HyDE (Hypothetical Document Embeddings) if a query is provided.
     """
@@ -135,6 +135,7 @@ async def build_memory_block(session_id: str, query: str = "") -> str:
     past_summaries = sqlite.get_all_summaries()
     
     semantic_hits = ""
+    hits = []
     if query:
         # HyDE: Generate a hypothetical answer to improve semantic search
         hyde_prompt = f"Write a brief, hypothetical answer to the following user query to help in searching a memory database: \"{query}\""
@@ -149,13 +150,14 @@ async def build_memory_block(session_id: str, query: str = "") -> str:
         if hits:
             semantic_hits = "\nRelevant past snippets: " + " | ".join(hits)
             
-    return f"""
+    block = f"""
 <MEMORY>
 User Facts: {profile}
 Past Session Highlights: {past_summaries}
 {semantic_hits}
 </MEMORY>
 """
+    return block, hits
 
 async def summarise_and_persist(session_id: str, full_transcript: str):
     """

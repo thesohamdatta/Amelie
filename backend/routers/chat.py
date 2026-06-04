@@ -8,6 +8,7 @@ import asyncio
 import base64
 import json
 import logging
+import time
 import uuid
 from typing import List
 
@@ -17,6 +18,7 @@ from backend.services import llm as llm_service
 from backend.services import memory as mem_service
 from backend.services import stt as stt_service
 from backend.services import tts as tts_service
+from backend.services import elevenlabs_service
 from backend.services.vad import is_speech
 from backend.soul import load_soul
 
@@ -54,11 +56,24 @@ async def _stream_audio(ws: WebSocket, audio_bytes: bytes) -> None:
 
 
 async def _tts_and_stream(ws: WebSocket, text: str, soul) -> None:
-    """Synthesize text and stream audio chunks."""
+    """Synthesize text and stream audio chunks + metadata."""
     if not text.strip():
         return
-    audio = await tts_service.synthesize(text, soul)
-    await _stream_audio(ws, audio)
+    
+    if soul.tts_voice == "elevenlabs":
+        # Path 2: Surgical Metadata — ElevenLabs WebSocket streaming
+        await _send(ws, {"type": "status", "state": "speaking"})
+        async for chunk in elevenlabs_service.stream_tts(text, soul.elevenlabs_voice_id, soul.elevenlabs_model_id):
+            if chunk["type"] == "audio":
+                await _send(ws, {"type": "audio_chunk", "data": chunk["data"]})
+            elif chunk["type"] == "alignment":
+                # Forward character-level timestamps to drive Soul Orb
+                await _send(ws, {"type": "alignment", "data": chunk["data"]})
+        await _send(ws, {"type": "audio_end"})
+    else:
+        # Fallback to legacy full-audio synthesis (Sarvam/Kokoro)
+        audio = await tts_service.synthesize(text, soul)
+        await _stream_audio(ws, audio)
 
 
 async def _tts_worker(ws: WebSocket, queue: asyncio.Queue, soul) -> None:
@@ -93,7 +108,10 @@ async def _handle_audio(ws: WebSocket, audio_b64: str, session_id: str, soul) ->
 
     # LLM streaming + sentence-chunked TTS worker
     history = mem_service.get_history(session_id)
-    memory_block = await mem_service.build_memory_block(session_id, query=transcript)
+    memory_block, hits = await mem_service.build_memory_block(session_id, query=transcript)
+    
+    if hits:
+        await _send(ws, {"type": "status", "state": "thinking", "memory_hit": hits})
 
     full_response = ""
     sentence_buf = ""
@@ -164,7 +182,10 @@ async def _handle_text(ws: WebSocket, text: str, session_id: str, soul) -> None:
     """Text-mode pipeline: text → LLM → TTS."""
     mem_service.add_message(session_id, "user", text)
     history = mem_service.get_history(session_id)
-    memory_block = await mem_service.build_memory_block(session_id, query=text)
+    memory_block, hits = await mem_service.build_memory_block(session_id, query=text)
+
+    if hits:
+        await _send(ws, {"type": "status", "state": "thinking", "memory_hit": hits})
 
     full_response = ""
     sentence_buf = ""
