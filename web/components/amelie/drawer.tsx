@@ -27,7 +27,7 @@ export function Drawer({ isOpen, onClose, side = "right", children }: DrawerProp
             animate={{ x: 0 }}
             exit={{ x: side === "right" ? "100%" : "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className={`fixed inset-y-0 ${side === "right" ? "right-0" : "left-0"} w-full max-w-md bg-white border-l border-hairline shadow-2xl z-[101] p-8`}
+            className={`fixed inset-y-0 ${side === "right" ? "right-0" : "left-0"} w-full max-w-md bg-white border-l border-hairline shadow-2xl z-[101] pt-12 pb-8 px-8`}
           >
             <button
               onClick={onClose}

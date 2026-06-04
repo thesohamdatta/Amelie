@@ -1,5 +1,5 @@
 <div align="center">
- <img width="350" height="600" alt="hero" src="https://github.com/user-attachments/assets/5027b7a8-f57f-4e4d-8f04-2c2e36bfdd0c" />
+ <img width="800" alt="Amélie Interface" src="web/public/amelie-interface.png" />
 
   <br/>
   <br/>

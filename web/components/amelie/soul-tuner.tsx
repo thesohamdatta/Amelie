@@ -37,7 +37,7 @@ export function SoulTuner({ soul, onUpdate }: SoulTunerProps) {
   }
 
   return (
-    <Card className="h-full border-none shadow-none bg-transparent">
+    <Card className="h-full border-none shadow-none bg-transparent pt-4">
       <CardHeader className="px-0 pt-0 pb-6">
         <CardTitle className="font-display text-2xl font-light tracking-tight text-ink">
           Personality Tuner
